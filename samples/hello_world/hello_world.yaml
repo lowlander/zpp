@@ -1,0 +1,6 @@
+sample:
+  description: ZPP Hello World
+  name: zpp_hello_world
+tests:
+  sample.zpp.hello_world:
+    tags: cpp zpp
