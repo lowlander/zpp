@@ -1,0 +1,7 @@
+tests:
+  zpp.thread:
+    arch_exclude: x86_64 posix
+    platform_exclude: qemu_x86_coverage
+    tags: cpp zpp
+    extra_configs:
+        - CONFIG_INIT_STACKS=y
