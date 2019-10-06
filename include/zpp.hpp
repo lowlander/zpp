@@ -21,6 +21,7 @@
 #include <zpp/fmt.hpp>
 #include <zpp/fifo.hpp>
 #include <zpp/mutex.hpp>
+#include <zpp/poll.hpp>
 #include <zpp/sched.hpp>
 #include <zpp/sem.hpp>
 #include <zpp/thread.hpp>
