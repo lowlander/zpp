@@ -1,0 +1,5 @@
+tests:
+  zpp.fifo:
+    arch_exclude: x86_64 posix
+    platform_exclude: qemu_x86_coverage
+    tags: cpp zpp

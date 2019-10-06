@@ -19,6 +19,7 @@
 #include <zpp/atomic_var.hpp>
 #include <zpp/clock.hpp>
 #include <zpp/fmt.hpp>
+#include <zpp/fifo.hpp>
 #include <zpp/mutex.hpp>
 #include <zpp/sched.hpp>
 #include <zpp/sem.hpp>
