@@ -14,6 +14,8 @@
 
 namespace {
 
+auto g_t = zpp::make_timer();
+
 void timer_callback(zpp::timer_base* t) noexcept
 {
 	zpp::print("Hello from timer tid={}\n", zpp::this_thread::get_id());
@@ -24,7 +26,7 @@ void test_timer_creation_function()
 	using namespace zpp;
 	using namespace std::chrono;
 
-	auto t = timer(timer_callback);
+	auto t = make_timer(timer_callback);
 	t.start(100ms, 1s);
 
 	this_thread::sleep_for(5s);
@@ -35,7 +37,7 @@ void test_timer_creation_lambda()
 	using namespace zpp;
 	using namespace std::chrono;
 
-	auto t = timer(
+	auto t = make_timer(
 		[] (auto t) {
 			print("Hello from timer tid={}\n",
 					this_thread::get_id());
