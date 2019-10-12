@@ -123,89 +123,44 @@ public:
 };
 
 ///
-/// @brief timer class
+/// @brief timer class with expire and stop callbacks
 ///
 /// @param ExpireCallback Type of the expire callback
 /// @param StopCallback Type of the stop callback
 ///
-template <class ExpireCallback = std::nullptr_t,
-	  class StopCallback = std::nullptr_t>
+template <class ExpireCallback, class StopCallback>
 class timer : public timer_base
 {
-private:
-	timer(ExpireCallback ecb, StopCallback scb, bool) noexcept
+public:
+	timer() = delete;
+
+	///
+	/// @brief construct timer with expire and stop callback
+	///
+	/// @param ecb the expire callback
+	/// @param scb the stop callbacl
+	///
+	explicit timer(ExpireCallback ecb, StopCallback scb) noexcept
 		: timer_base()
 		, m_expire_callback(ecb)
 		, m_stop_callback(scb)
 	{
-		k_timer_expiry_t ecb_func = nullptr;
+		k_timer_expiry_t ecb_func = [](struct k_timer* t) noexcept {
+			auto self = get_user_data(t);
+			if (self != nullptr) {
+				std::invoke(self->m_expire_callback, self);
+			}
+		};
 
-		if constexpr (std::is_invocable<ExpireCallback,
-							decltype(this)>::value)
-		{
-			ecb_func = [](struct k_timer* t) noexcept {
-				auto self = get_user_data(t);
-				if (self != nullptr) {
-					std::invoke(self->m_expire_callback,
-								self);
-				}
-			};
-		}
-
-		k_timer_stop_t scb_func = nullptr;
-
-		if constexpr (std::is_invocable<StopCallback,
-							decltype(this)>::value)
-		{
-			scb_func = [](struct k_timer* t) noexcept {
-				auto self = get_user_data(t);
-				if (self != nullptr) {
-					std::invoke(self->m_stop_callback,
-								self);
-				}
-			};
-		}
+		k_timer_stop_t scb_func = [](struct k_timer* t) noexcept {
+			auto self = get_user_data(t);
+			if (self != nullptr) {
+				std::invoke(self->m_stop_callback, self);
+			}
+		};
 
 		k_timer_init( native_handle(), ecb_func, scb_func);
 		k_timer_user_data_set( native_handle(), this);
-	}
-public:
-	///
-	/// @brief Create timer with expire and stop callbacks
-	///
-	/// @param ecb The expire callback
-	/// @param scb The stop callback
-	///
-	timer(ExpireCallback ecb, StopCallback scb) noexcept
-		: timer(ecb, scb, true)
-	{
-		static_assert(std::is_invocable<ExpireCallback,
-						decltype(this)>::value,
-				"Invalid expire callback");
-		static_assert(std::is_invocable<StopCallback,
-						decltype(this)>::value,
-				"Invalid stop callback");
-	}
-
-	///
-	/// @brief Create timer with only a expire callback
-	///
-	/// @param ecb The expire callback
-	///
-	explicit timer(ExpireCallback ecb) noexcept
-		: timer(ecb, nullptr, true)
-	{
-		static_assert(std::is_invocable<ExpireCallback,
-						decltype(this)>::value,
-				"Invalid expire callback");
-	}
-
-	///
-	/// @brief Create timer without callbacks
-	///
-	timer() noexcept
-		: timer(nullptr, nullptr, true)
-	{
 	}
 private:
 	static timer* get_user_data(struct k_timer* t) noexcept
@@ -215,12 +170,101 @@ private:
 private:
 	ExpireCallback	m_expire_callback;
 	StopCallback	m_stop_callback;
-public:
-	timer(const timer&) = delete;
-	timer(timer&&) = delete;
-	timer& operator=(const timer&) = delete;
-	timer& operator=(timer&&) = delete;
 };
+
+
+///
+/// @brief timer class with only an expire callback
+///
+/// @param ExpireCallback Type of the expire callback
+///
+template <class ExpireCallback>
+class basic_timer : public timer_base
+{
+public:
+	basic_timer() = delete;
+
+	///
+	/// @brief construct timer with an expire callback
+	///
+	/// @param ecb the expire callback
+	///
+	explicit basic_timer(ExpireCallback ecb) noexcept
+		: timer_base()
+		, m_expire_callback(ecb)
+	{
+		k_timer_expiry_t ecb_func = [](struct k_timer* t) noexcept {
+			auto self = get_user_data(t);
+			if (self != nullptr) {
+				std::invoke(self->m_expire_callback, self);
+			}
+		};
+
+		k_timer_init( native_handle(), ecb_func, nullptr);
+		k_timer_user_data_set( native_handle(), this);
+	}
+private:
+	static basic_timer* get_user_data(struct k_timer* t) noexcept
+	{
+		return static_cast<basic_timer*>(k_timer_user_data_get(t));
+	}
+private:
+	ExpireCallback	m_expire_callback;
+};
+
+
+///
+/// @brief timer class with no callbacks used for syncing only
+///
+class sync_timer : public timer_base
+{
+public:
+	///
+	/// @brief constuctor for the sync timer
+	///
+	sync_timer() noexcept
+		: timer_base()
+	{
+		k_timer_init(native_handle(), nullptr, nullptr);
+	}
+};
+
+///
+/// @brief create sync_timer object
+///
+/// @return sync_timer object
+///
+inline auto make_timer() noexcept
+{
+	return sync_timer();
+}
+
+///
+/// @brief create basic_timer object
+///
+/// @param ecb the expire callback
+///
+/// @return basic_timer object
+///
+template <class ExpireCallback>
+inline auto make_timer(ExpireCallback ecb) noexcept
+{
+	return basic_timer(ecb);
+}
+
+///
+/// @brief create timer object
+///
+/// @param ecb the expire callback
+/// @param scb the stop callback
+///
+/// @return timer object
+///
+template <class ExpireCallback, class StopCallback>
+inline auto make_timer(ExpireCallback ecb, StopCallback scb) noexcept
+{
+	return timer(ecb, scb);
+}
 
 } // namespace zpp
 
