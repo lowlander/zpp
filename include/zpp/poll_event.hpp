@@ -121,14 +121,20 @@ public:
 		__ASSERT_NO_MSG(m_event != nullptr);
 		__ASSERT_NO_MSG(m_event->tag != (int)type_tag::type_unknown);
 
-		if ((m_event->state & K_POLL_STATE_SIGNALED) ||
-		    (m_event->state & K_POLL_STATE_SEM_AVAILABLE) ||
-		    (m_event->state & K_POLL_STATE_DATA_AVAILABLE) ||
-		    (m_event->state & K_POLL_STATE_FIFO_DATA_AVAILABLE)) {
-			return true;
-		} else {
+		switch((type_tag)m_event->tag) {
+		case type_tag::type_unknown:
+			return false;
+		case type_tag::type_sem:
+			return (m_event->state & K_POLL_STATE_SEM_AVAILABLE);
+		case type_tag::type_fifo:
+			return (m_event->state & K_POLL_STATE_FIFO_DATA_AVAILABLE);
+		case type_tag::type_signal:
+			return (m_event->state & K_POLL_STATE_SIGNALED);
+		case type_tag::type_ignore:
 			return false;
 		}
+
+		return false;
 	}
 
 	///
