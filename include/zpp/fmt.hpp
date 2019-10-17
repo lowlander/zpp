@@ -7,6 +7,7 @@
 #ifndef ZPP__INCLUDE__ZPP__FMT_HPP
 #define ZPP__INCLUDE__ZPP__FMT_HPP
 
+#include <zephyr.h>
 #include <sys/__assert.h>
 
 #include <cstddef>
