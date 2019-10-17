@@ -20,6 +20,7 @@
 #include <zpp/clock.hpp>
 #include <zpp/fmt.hpp>
 #include <zpp/fifo.hpp>
+#include <zpp/mem_pool.hpp>
 #include <zpp/mem_slab.hpp>
 #include <zpp/mutex.hpp>
 #include <zpp/poll.hpp>
