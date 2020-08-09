@@ -1,6 +1,6 @@
 tests:
   zpp.timer:
     slow: true
-    arch_exclude: x86_64 posix
+    arch_exclude: posix
     platform_exclude: qemu_x86_coverage
     tags: cpp zpp
