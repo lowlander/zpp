@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__CLOCK_HPP
-#define ZPP__INCLUDE__ZPP__CLOCK_HPP
+#ifndef ZPP__INCLUDE_ZPP_CLOCK_HPP
+#define ZPP__INCLUDE_ZPP_CLOCK_HPP
 
 #include <kernel.h>
 #include <sys_clock.h>
@@ -92,4 +92,4 @@ constexpr k_timeout_t to_timeout( const std::chrono::duration<Rep, Period>& d) n
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE__ZPP__CLOCK_HPP
+#endif // ZPP_INCLUDE_ZPP_CLOCK_HPP

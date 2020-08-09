@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__POLL_EVENT_SET_HPP
-#define ZPP__INCLUDE__ZPP__POLL_EVENT_SET_HPP
+#ifndef ZPP_INCLUDE_ZPP_POLL_EVENT_SET_HPP
+#define ZPP_INCLUDE_ZPP_POLL_EVENT_SET_HPP
 
 #ifdef CONFIG_POLL
 
@@ -147,4 +147,4 @@ poll_event_set(T&&... t) noexcept -> poll_event_set<sizeof...(T)>;
 
 #endif // CONFIG_POLL
 
-#endif // ZPP__INCLUDE__ZPP__POLL_EVENT_SET_HPP
+#endif // ZPP_INCLUDE_ZPP_POLL_EVENT_SET_HPP

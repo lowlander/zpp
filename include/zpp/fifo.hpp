@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__FIFO_HPP
-#define ZPP__INCLUDE__ZPP__FIFO_HPP
+#ifndef ZPP_INCLUDE_ZPP_FIFO_HPP
+#define ZPP_INCLUDE_ZPP_FIFO_HPP
 
 #include <kernel.h>
 #include <sys/__assert.h>
@@ -225,4 +225,4 @@ public:
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE__ZPP__FIFO_HPP
+#endif // ZPP_INCLUDE_ZPP_FIFO_HPP

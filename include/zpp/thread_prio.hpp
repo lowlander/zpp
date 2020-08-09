@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__THREAD_PRIO_HPP
-#define ZPP__INCLUDE__ZPP__THREAD_PRIO_HPP
+#ifndef ZPP_INCLUDE_ZPP_THREAD_PRIO_HPP
+#define ZPP_INCLUDE_ZPP_THREAD_PRIO_HPP
 
 #include <kernel.h>
 #include <sys/__assert.h>
@@ -259,4 +259,4 @@ inline void print_arg(thread_prio prio)
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE__ZPP__THREAD_PRIO_HPP
+#endif // ZPP_INCLUDE_ZPP_THREAD_PRIO_HPP

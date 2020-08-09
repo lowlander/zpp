@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__ATOMIC_VAR_HPP
-#define ZPP__INCLUDE__ZPP__ATOMIC_VAR_HPP
+#ifndef ZPP__INCLUDE_ZPP_ATOMIC_VAR_HPP
+#define ZPP__INCLUDE_ZPP_ATOMIC_VAR_HPP
 
 #include <sys/atomic.h>
 #include <sys/__assert.h>
@@ -430,4 +430,4 @@ public:
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE__ZPP__ATOMIC_VAR_HPP
+#endif // ZPP__INCLUDE_ZPP_ATOMIC_VAR_HPP

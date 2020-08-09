@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__MEM_SLAB_HPP
-#define ZPP__INCLUDE__ZPP__MEM_SLAB_HPP
+#ifndef ZPP_INCLUDE_ZPP_MEM_SLAB_HPP
+#define ZPP_INCLUDE_ZPP_MEM_SLAB_HPP
 
 #include <kernel.h>
 #include <sys/__assert.h>
@@ -208,4 +208,4 @@ constexpr size_t mem_slab_block_count() noexcept
 	} \
 	::zpp::borrowed_mem_slab<Type> name(&native_##name)
 
-#endif // ZPP__INCLUDE__ZPP__MEM_SLAB_HPP
+#endif // ZPP_INCLUDE_ZPP_MEM_SLAB_HPP

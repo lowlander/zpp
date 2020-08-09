@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__POLL_SIGNAL_HPP
-#define ZPP__INCLUDE__ZPP__POLL_SIGNAL_HPP
+#ifndef ZPP_INCLUDE_ZPP_POLL_SIGNAL_HPP
+#define ZPP_INCLUDE_ZPP_POLL_SIGNAL_HPP
 
 #ifdef CONFIG_POLL
 
@@ -165,4 +165,4 @@ public:
 
 #endif // CONFIG_POLL
 
-#endif // ZPP__INCLUDE__ZPP__POLL_SIGNAL_HPP
+#endif // ZPP_INCLUDE_ZPP_POLL_SIGNAL_HPP

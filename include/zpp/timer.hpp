@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__TIMER_HPP
-#define ZPP__INCLUDE__ZPP__TIMER_HPP
+#ifndef ZPP_INCLUDE_ZPP_TIMER_HPP
+#define ZPP_INCLUDE_ZPP_TIMER_HPP
 
 #include <kernel.h>
 #include <sys/__assert.h>
@@ -264,4 +264,4 @@ inline auto make_timer(ExpireCallback ecb, StopCallback scb) noexcept
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE__ZPP__TIMER_HPP
+#endif // ZPP_INCLUDE_ZPP_TIMER_HPP

@@ -4,8 +4,8 @@
 /// SPDX-License-Identifier: Apache-2.0
 ///
 
-#ifndef ZPP__INCLUDE__ZPP__FMT_HPP
-#define ZPP__INCLUDE__ZPP__FMT_HPP
+#ifndef ZPP_INCLUDE_ZPP_FMT_HPP
+#define ZPP_INCLUDE_ZPP_FMT_HPP
 
 #include <zephyr.h>
 #include <sys/__assert.h>
@@ -161,4 +161,4 @@ inline void print(const char* fmt, Args... args) noexcept
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE__ZPP__FMT_HPP
+#endif // ZPP_INCLUDE_ZPP_FMT_HPP

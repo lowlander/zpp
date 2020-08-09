@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__MEM_POOL_HPP
-#define ZPP__INCLUDE__ZPP__MEM_POOL_HPP
+#ifndef ZPP_INCLUDE_ZPP_MEM_POOL_HPP
+#define ZPP_INCLUDE_ZPP_MEM_POOL_HPP
 
 #include <kernel.h>
 #include <sys/__assert.h>
@@ -200,4 +200,4 @@ constexpr size_t mem_pool_block_count() noexcept
 	} \
 	::zpp::borrowed_mem_pool<Type> name(&native_##name)
 
-#endif // ZPP__INCLUDE__ZPP__MEM_POOL_HPP
+#endif // ZPP_INCLUDE_ZPP_MEM_POOL_HPP

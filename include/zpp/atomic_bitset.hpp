@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__ATOMIC_BITSET_HPP
-#define ZPP__INCLUDE__ZPP__ATOMIC_BITSET_HPP
+#ifndef ZPP__INCLUDE_ZPP_ATOMIC_BITSET_HPP
+#define ZPP__INCLUDE_ZPP_ATOMIC_BITSET_HPP
 
 #include <sys/atomic.h>
 #include <sys/__assert.h>
@@ -124,4 +124,4 @@ public:
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE__ZPP__ATOMIC_BITSET_HPP
+#endif // ZPP_INCLUDE_ZPP_ATOMIC_BITSET_HPP

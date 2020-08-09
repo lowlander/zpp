@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE__ZPP__SEM_HPP
-#define ZPP__INCLUDE__ZPP__SEM_HPP
+#ifndef ZPP_INCLUDE_ZPP_SEM_HPP
+#define ZPP_INCLUDE_ZPP_SEM_HPP
 
 #include <zpp/thread.hpp>
 
@@ -273,4 +273,4 @@ public:
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE__ZPP__SEM_HPP
+#endif // ZPP_INCLUDE_ZPP_SEM_HPP
