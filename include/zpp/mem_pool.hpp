@@ -23,7 +23,7 @@ public:
 	using value_type = Type;
 	using pointer = Type*;
 	using const_pointer = const pointer;
-	using size_type = u32_t;
+	using size_type = uint32_t;
 public:
 	borrowed_mem_pool() = delete;
 
@@ -88,8 +88,11 @@ public:
 	constexpr size_type max_size() const noexcept
 	{
 		__ASSERT_NO_MSG(m_mem_pool != nullptr);
-
+#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
+		return m_mem_pool->heap->heap.init_bytes / sizeof(value_type);
+#else
 		return m_mem_pool->base.max_sz / sizeof(value_type);
+#endif
 	}
 private:
 	k_mem_pool*	m_mem_pool { nullptr };

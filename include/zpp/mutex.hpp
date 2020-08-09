@@ -72,8 +72,7 @@ public:
 	{
 		using namespace std::chrono;
 
-		if (k_mutex_lock(native_handle(),
-			duration_cast<milliseconds>(timeout).count()) == 0)
+		if (k_mutex_lock(native_handle(), to_timeout(timeout)) == 0)
 		{
 			return true;
 		} else {

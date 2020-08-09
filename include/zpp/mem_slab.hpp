@@ -23,7 +23,7 @@ public:
 	using value_type = Type;
 	using pointer = Type*;
 	using const_pointer = const pointer;
-	using size_type = u32_t;
+	using size_type = uint32_t;
 public:
 	borrowed_mem_slab() = delete;
 

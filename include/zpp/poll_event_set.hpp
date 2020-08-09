@@ -17,6 +17,8 @@
 #include <optional>
 #include <array>
 
+#include <zpp/clock.hpp>
+
 #include <zpp/sem.hpp>
 #include <zpp/fifo.hpp>
 
@@ -101,7 +103,7 @@ public:
 	{
 		using namespace std::chrono;
 
-		return poll(duration_cast<milliseconds>(timeout).count());
+		return poll(to_timeout(timeout));
 	}
 private:
 	void assign(int index) noexcept
@@ -116,7 +118,7 @@ private:
 		assign(index+1, t...);
 	}
 
-	auto poll(s32_t timeout) noexcept
+	auto poll(k_timeout_t timeout) noexcept
 	{
 		for (auto& e: m_events) {
 			e.state = K_POLL_STATE_NOT_READY;

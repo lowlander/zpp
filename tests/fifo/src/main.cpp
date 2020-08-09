@@ -20,8 +20,8 @@ zpp::thread_data<1024> tcb;
 
 class item : public zpp::fifo_item_base {
 public:
-	u32_t data{};
-	u32_t more_data{};
+	uint32_t data{};
+	uint32_t more_data{};
 };
 
 std::array<item, 4> g_item_array;

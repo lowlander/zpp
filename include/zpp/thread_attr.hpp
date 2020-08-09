@@ -81,12 +81,12 @@ public:
 	{
 		using namespace std::chrono;
 
-		auto ms = duration_cast<milliseconds>(delay.t);
+		//auto ms = duration_cast<milliseconds>(delay.t);
 
-		if (ms <= milliseconds::zero()) {
-			m_delay =  K_NO_WAIT;
+		if (delay.t <= decltype(delay.t)::zero()) {
+			m_delay = K_NO_WAIT;
 		} else {
-			m_delay = ms.count();
+			m_delay = to_tick(delay.t);
 		}
 	}
 
@@ -99,7 +99,7 @@ public:
 		if (v == thread_suspend::yes) {
 			m_delay = K_FOREVER;
 		} else {
-			if (m_delay == K_FOREVER) {
+			if (K_TIMEOUT_EQ(m_delay, K_FOREVER)) {
 				m_delay = K_NO_WAIT;
 			}
 		}
@@ -202,8 +202,8 @@ public:
 	}
 private:
 	thread_prio		m_prio{ };
-	u32_t			m_options{ 0 };
-	s32_t			m_delay{ K_NO_WAIT };
+	uint32_t			m_options{ 0 };
+	k_timeout_t			m_delay{ K_NO_WAIT };
 };
 
 } // namespace zpp

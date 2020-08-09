@@ -17,7 +17,7 @@ namespace zpp {
 ///
 /// @param StackSize defines the stacksize in bytes
 ///
-template <u32_t StackSize>
+template <uint32_t StackSize>
 class thread_data {
 public:
 	//

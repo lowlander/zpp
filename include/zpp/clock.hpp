@@ -8,6 +8,7 @@
 #define ZPP__INCLUDE__ZPP__CLOCK_HPP
 
 #include <kernel.h>
+#include <sys_clock.h>
 #include <sys/__assert.h>
 
 #include <chrono>
@@ -20,8 +21,8 @@ namespace zpp {
 ///
 class uptime_clock {
 public:
-	using rep = s64_t;
-	using period = std::milli;
+	using rep = int64_t;
+	using period = std::nano;
 	using duration = std::chrono::duration<rep, period>;
 	using time_point = std::chrono::time_point<uptime_clock>;
 	static constexpr bool is_steady = false;
@@ -33,7 +34,7 @@ public:
 	///
 	static time_point now() noexcept
 	{
-		return time_point(duration(k_uptime_get()));
+		return time_point(duration(k_ticks_to_ns_floor64(k_uptime_ticks())));
 	}
 };
 
@@ -43,7 +44,7 @@ public:
 ///
 class cycle_clock {
 public:
-	using rep = u64_t;
+	using rep = uint64_t;
 	using period = std::nano;
 	using duration = std::chrono::duration<rep, period>;
 	using time_point = std::chrono::time_point<cycle_clock>;
@@ -56,8 +57,7 @@ public:
 	///
 	static time_point now() noexcept
 	{
-		u64_t res = SYS_CLOCK_HW_CYCLES_TO_NS64( k_cycle_get_32() );
-		return time_point(duration(res));
+		return time_point(duration(k_cyc_to_ns_floor64(k_cycle_get_32())));
 	}
 };
 
@@ -69,16 +69,25 @@ public:
 /// @return the number of tick @a d represents
 ///
 template< class Rep, class Period >
-constexpr s32_t to_tick( const std::chrono::duration<Rep, Period>& d) noexcept
+constexpr k_ticks_t to_tick( const std::chrono::duration<Rep, Period>& d) noexcept
 {
 	using namespace std::chrono;
-	milliseconds ms = duration_cast<milliseconds>(d);
 
-	if (ms.count() >= std::numeric_limits<s32_t>::max()) {
-		return std::numeric_limits<s32_t>::max();
-	} else {
-		return (s32_t)ms.count();
-	}
+	return k_ns_to_ticks_floor64(duration_cast<nanoseconds>(d).count());
+}
+
+
+///
+/// @brief convert a duration to tick
+///
+/// @param d the std::chrono::duration to convert
+///
+/// @return the number of tick @a d represents
+///
+template< class Rep, class Period >
+constexpr k_timeout_t to_timeout( const std::chrono::duration<Rep, Period>& d) noexcept
+{
+	return { to_tick(d) };
 }
 
 } // namespace zpp

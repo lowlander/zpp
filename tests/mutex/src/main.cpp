@@ -21,14 +21,18 @@ zpp::borrowed_mutex bm(&bm_mutex);
 
 void test_mutex()
 {
-	m.lock();
+	if (!m.lock()) {
+        // error
+    }
 
 	m.unlock();
 }
 
 void test_borrowed_mutex()
 {
-	bm.lock();
+	if (!bm.lock()) {
+        // error
+    }
 
 	bm.unlock();
 }

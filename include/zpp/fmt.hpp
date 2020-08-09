@@ -24,14 +24,14 @@ inline void print_arg(double v) noexcept { printk("%g", v); }
 inline void print_arg(char v) noexcept { printk("%c", v); }
 inline void print_arg(const char* v) noexcept { printk("%s", v); }
 inline void print_arg(const void* v) noexcept { printk("%p", v); }
-inline void print_arg(u8_t v) noexcept { printk("%d", (u32_t)v); }
-inline void print_arg(s8_t v) noexcept { printk("%d", (s32_t)v); }
-inline void print_arg(u16_t v) noexcept { printk("%d", (u32_t)v); }
-inline void print_arg(s16_t v) noexcept { printk("%d", (s32_t)v); }
-inline void print_arg(u32_t v) noexcept { printk("%d", v); }
-inline void print_arg(s32_t v) noexcept { printk("%d", v); }
-inline void print_arg(u64_t v) noexcept { printk("%lld", v); }
-inline void print_arg(s64_t v) noexcept { printk("%lld", v); }
+inline void print_arg(uint8_t v) noexcept { printk("%d", (uint32_t)v); }
+inline void print_arg(int8_t v) noexcept { printk("%d", (int32_t)v); }
+inline void print_arg(uint16_t v) noexcept { printk("%d", (uint32_t)v); }
+inline void print_arg(int16_t v) noexcept { printk("%d", (int32_t)v); }
+inline void print_arg(uint32_t v) noexcept { printk("%d", v); }
+inline void print_arg(int32_t v) noexcept { printk("%d", v); }
+inline void print_arg(uint64_t v) noexcept { printk("%lld", v); }
+inline void print_arg(int64_t v) noexcept { printk("%lld", v); }
 
 template < class Rep, class Period>
 inline void print_arg(std::chrono::duration<Rep, Period> v)

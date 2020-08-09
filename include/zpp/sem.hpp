@@ -27,7 +27,7 @@ public:
 	///
 	/// @brief Type used as counter
 	///
-	using counter_type = u32_t;
+	using counter_type = uint32_t;
 
 	///
 	/// @brief Maxium value of the counter
@@ -82,11 +82,7 @@ public:
 	try_take_for(const std::chrono::duration<Rep, Period>&
 						timeout_duration) noexcept
 	{
-		using namespace std::chrono;
-
-		milliseconds ms = duration_cast<milliseconds>(timeout_duration);
-
-		if (k_sem_take(native_handle(), ms.count()) == 0) {
+		if (k_sem_take(native_handle(), to_timeout(timeout_duration)) == 0) {
 			return true;
 		} else {
 			return false;

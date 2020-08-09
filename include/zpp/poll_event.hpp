@@ -30,7 +30,7 @@ public:
 	///
 	/// @brief type of event sources
 	///
-	enum class type_tag : u8_t {
+	enum class type_tag : uint8_t {
 		type_unknown,
 		type_sem,
 		type_fifo,

@@ -21,7 +21,7 @@ namespace {
 zpp::thread_data<1024> test_thread;
 
 struct fifo_msg : public zpp::fifo_item_base {
-	u32_t msg { FIFO_MSG_VALUE };
+	uint32_t msg { FIFO_MSG_VALUE };
 };
 
 fifo_msg wait_msg;

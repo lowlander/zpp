@@ -70,7 +70,7 @@ template< class Rep, class Period >
 inline auto
 sleep_for(const std::chrono::duration<Rep, Period>& sleep_duration)
 {
-	s32_t res = k_sleep(to_tick(sleep_duration));
+	auto res = k_sleep(to_timeout(sleep_duration));
 
 	return std::chrono::milliseconds(res);
 }
@@ -88,7 +88,7 @@ sleep_until( const std::chrono::time_point<Clock, Duration>& sleep_time)
 
 	Duration dt;
 	while ( (dt = sleep_time - Clock::now()) > Duration::zero()) {
-		k_sleep(to_tick(dt));
+		k_sleep(to_timeout(dt));
 	}
 }
 
@@ -193,7 +193,7 @@ public:
 		};
 
 		auto call_info_size =
-			ROUND_UP(sizeof(call_info), STACK_ALIGN);
+			ROUND_UP(sizeof(call_info), ARCH_STACK_PTR_ALIGN);
 
 		auto stack_data = td.stack_data();
 		auto stack_size = td.stack_size();

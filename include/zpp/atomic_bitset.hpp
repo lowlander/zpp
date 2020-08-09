@@ -7,7 +7,7 @@
 #ifndef ZPP__INCLUDE__ZPP__ATOMIC_BITSET_HPP
 #define ZPP__INCLUDE__ZPP__ATOMIC_BITSET_HPP
 
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <sys/__assert.h>
 
 #include <cstddef>

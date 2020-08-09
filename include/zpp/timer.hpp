@@ -14,6 +14,8 @@
 #include <functional>
 #include <type_traits>
 
+#include <zpp/clock.hpp>
+
 namespace zpp {
 
 ///
@@ -45,10 +47,7 @@ public:
 	{
 		using namespace std::chrono;
 
-		k_timer_start(&m_timer,
-				duration_cast<milliseconds>(duration).count(),
-				duration_cast<milliseconds>(period).count()
-			);
+		k_timer_start(&m_timer, to_timeout(duration), to_timeout(period));
 	}
 
 	///
@@ -61,10 +60,7 @@ public:
 	{
 		using namespace std::chrono;
 
-		k_timer_start(&m_timer,
-				duration_cast<milliseconds>(duration).count(),
-				0
-			);
+		k_timer_start(&m_timer, to_timeout(duration), K_NO_WAIT);
 	}
 
 	///
@@ -98,10 +94,10 @@ public:
 	///
 	/// @return the remaining time
 	///
-	std::chrono::milliseconds remaining_time() noexcept
+	std::chrono::nanoseconds remaining_time() noexcept
 	{
-		u32_t r = k_timer_remaining_get(&m_timer);
-		return std::chrono::milliseconds(r);
+		auto t = k_timer_remaining_ticks(&m_timer);
+		return std::chrono::nanoseconds(k_ticks_to_ns_floor64(t));
 	}
 
 	///
