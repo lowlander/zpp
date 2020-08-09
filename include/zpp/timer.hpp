@@ -23,99 +23,99 @@ namespace zpp {
 ///
 class timer_base {
 protected:
-	timer_base() noexcept
-	{
-	}
+  timer_base() noexcept
+  {
+  }
 public:
-	///
-	/// @brief Destructor that stops the timer
-	///
-	~timer_base()
-	{
-		stop();
-	}
+  ///
+  /// @brief Destructor that stops the timer
+  ///
+  ~timer_base()
+  {
+    stop();
+  }
 
-	///
-	/// @brief Start a timer with @a duration and @a period.
-	///
-	/// @param duration The first time out
-	/// @param period the time of the repeat period
-	///
-	template <class Rep1, class Period1, class Rep2, class Period2>
-	void start(const std::chrono::duration<Rep1, Period1>& duration,
-		   const std::chrono::duration<Rep2, Period2>& period) noexcept
-	{
-		using namespace std::chrono;
+  ///
+  /// @brief Start a timer with @a duration and @a period.
+  ///
+  /// @param duration The first time out
+  /// @param period the time of the repeat period
+  ///
+  template <class Rep1, class Period1, class Rep2, class Period2>
+  void start(const std::chrono::duration<Rep1, Period1>& duration,
+       const std::chrono::duration<Rep2, Period2>& period) noexcept
+  {
+    using namespace std::chrono;
 
-		k_timer_start(&m_timer, to_timeout(duration), to_timeout(period));
-	}
+    k_timer_start(&m_timer, to_timeout(duration), to_timeout(period));
+  }
 
-	///
-	/// @brief Start a single shot timer with @a duration
-	///
-	/// @param duration The timeout
-	///
-	template <class Rep, class Period>
-	void start(const std::chrono::duration<Rep, Period>& duration) noexcept
-	{
-		using namespace std::chrono;
+  ///
+  /// @brief Start a single shot timer with @a duration
+  ///
+  /// @param duration The timeout
+  ///
+  template <class Rep, class Period>
+  void start(const std::chrono::duration<Rep, Period>& duration) noexcept
+  {
+    using namespace std::chrono;
 
-		k_timer_start(&m_timer, to_timeout(duration), K_NO_WAIT);
-	}
+    k_timer_start(&m_timer, to_timeout(duration), K_NO_WAIT);
+  }
 
-	///
-	/// @brief Stop the timer
-	///
-	void stop () noexcept
-	{
-		k_timer_stop(&m_timer);
-	}
+  ///
+  /// @brief Stop the timer
+  ///
+  void stop () noexcept
+  {
+    k_timer_stop(&m_timer);
+  }
 
-	///
-	/// @brief get the timer status
-	///
-	/// @return the timer status
-	///
-	auto status() noexcept
-	{
-		return k_timer_status_get(&m_timer);
-	}
+  ///
+  /// @brief get the timer status
+  ///
+  /// @return the timer status
+  ///
+  auto status() noexcept
+  {
+    return k_timer_status_get(&m_timer);
+  }
 
-	///
-	/// @brief sync with the timer
-	///
-	auto sync() noexcept
-	{
-		return k_timer_status_sync(&m_timer);
-	}
+  ///
+  /// @brief sync with the timer
+  ///
+  auto sync() noexcept
+  {
+    return k_timer_status_sync(&m_timer);
+  }
 
-	///
-	/// @brief Get remaining time
-	///
-	/// @return the remaining time
-	///
-	std::chrono::nanoseconds remaining_time() noexcept
-	{
-		auto t = k_timer_remaining_ticks(&m_timer);
-		return std::chrono::nanoseconds(k_ticks_to_ns_floor64(t));
-	}
+  ///
+  /// @brief Get remaining time
+  ///
+  /// @return the remaining time
+  ///
+  std::chrono::nanoseconds remaining_time() noexcept
+  {
+    auto t = k_timer_remaining_ticks(&m_timer);
+    return std::chrono::nanoseconds(k_ticks_to_ns_floor64(t));
+  }
 
-	///
-	/// @brief Zephyr native handle.
-	///
-	/// @return pointer to the k_timer
-	///
-	auto native_handle() noexcept
-	{
-		return &m_timer;
-	}
+  ///
+  /// @brief Zephyr native handle.
+  ///
+  /// @return pointer to the k_timer
+  ///
+  auto native_handle() noexcept
+  {
+    return &m_timer;
+  }
 private:
-	struct k_timer	m_timer { };
+  struct k_timer	m_timer { };
 public:
-	timer_base(const timer_base&) = delete;
-	timer_base(timer_base&&) = delete;
-	timer_base& operator=(const timer_base&) = delete;
-	timer_base& operator=(timer_base&&) = delete;
+  timer_base(const timer_base&) = delete;
+  timer_base(timer_base&&) = delete;
+  timer_base& operator=(const timer_base&) = delete;
+  timer_base& operator=(timer_base&&) = delete;
 };
 
 ///
@@ -128,44 +128,44 @@ template <class ExpireCallback, class StopCallback>
 class timer : public timer_base
 {
 public:
-	timer() = delete;
+  timer() = delete;
 
-	///
-	/// @brief construct timer with expire and stop callback
-	///
-	/// @param ecb the expire callback
-	/// @param scb the stop callbacl
-	///
-	explicit timer(ExpireCallback ecb, StopCallback scb) noexcept
-		: timer_base()
-		, m_expire_callback(ecb)
-		, m_stop_callback(scb)
-	{
-		k_timer_expiry_t ecb_func = [](struct k_timer* t) noexcept {
-			auto self = get_user_data(t);
-			if (self != nullptr) {
-				std::invoke(self->m_expire_callback, self);
-			}
-		};
+  ///
+  /// @brief construct timer with expire and stop callback
+  ///
+  /// @param ecb the expire callback
+  /// @param scb the stop callbacl
+  ///
+  explicit timer(ExpireCallback ecb, StopCallback scb) noexcept
+    : timer_base()
+    , m_expire_callback(ecb)
+    , m_stop_callback(scb)
+  {
+    k_timer_expiry_t ecb_func = [](struct k_timer* t) noexcept {
+      auto self = get_user_data(t);
+      if (self != nullptr) {
+        std::invoke(self->m_expire_callback, self);
+      }
+    };
 
-		k_timer_stop_t scb_func = [](struct k_timer* t) noexcept {
-			auto self = get_user_data(t);
-			if (self != nullptr) {
-				std::invoke(self->m_stop_callback, self);
-			}
-		};
+    k_timer_stop_t scb_func = [](struct k_timer* t) noexcept {
+      auto self = get_user_data(t);
+      if (self != nullptr) {
+        std::invoke(self->m_stop_callback, self);
+      }
+    };
 
-		k_timer_init( native_handle(), ecb_func, scb_func);
-		k_timer_user_data_set( native_handle(), this);
-	}
+    k_timer_init( native_handle(), ecb_func, scb_func);
+    k_timer_user_data_set( native_handle(), this);
+  }
 private:
-	static timer* get_user_data(struct k_timer* t) noexcept
-	{
-		return static_cast<timer*>(k_timer_user_data_get(t));
-	}
+  static timer* get_user_data(struct k_timer* t) noexcept
+  {
+    return static_cast<timer*>(k_timer_user_data_get(t));
+  }
 private:
-	ExpireCallback	m_expire_callback;
-	StopCallback	m_stop_callback;
+  ExpireCallback	m_expire_callback;
+  StopCallback	m_stop_callback;
 };
 
 
@@ -178,34 +178,34 @@ template <class ExpireCallback>
 class basic_timer : public timer_base
 {
 public:
-	basic_timer() = delete;
+  basic_timer() = delete;
 
-	///
-	/// @brief construct timer with an expire callback
-	///
-	/// @param ecb the expire callback
-	///
-	explicit basic_timer(ExpireCallback ecb) noexcept
-		: timer_base()
-		, m_expire_callback(ecb)
-	{
-		k_timer_expiry_t ecb_func = [](struct k_timer* t) noexcept {
-			auto self = get_user_data(t);
-			if (self != nullptr) {
-				std::invoke(self->m_expire_callback, self);
-			}
-		};
+  ///
+  /// @brief construct timer with an expire callback
+  ///
+  /// @param ecb the expire callback
+  ///
+  explicit basic_timer(ExpireCallback ecb) noexcept
+    : timer_base()
+    , m_expire_callback(ecb)
+  {
+    k_timer_expiry_t ecb_func = [](struct k_timer* t) noexcept {
+      auto self = get_user_data(t);
+      if (self != nullptr) {
+        std::invoke(self->m_expire_callback, self);
+      }
+    };
 
-		k_timer_init( native_handle(), ecb_func, nullptr);
-		k_timer_user_data_set( native_handle(), this);
-	}
+    k_timer_init( native_handle(), ecb_func, nullptr);
+    k_timer_user_data_set( native_handle(), this);
+  }
 private:
-	static basic_timer* get_user_data(struct k_timer* t) noexcept
-	{
-		return static_cast<basic_timer*>(k_timer_user_data_get(t));
-	}
+  static basic_timer* get_user_data(struct k_timer* t) noexcept
+  {
+    return static_cast<basic_timer*>(k_timer_user_data_get(t));
+  }
 private:
-	ExpireCallback	m_expire_callback;
+  ExpireCallback	m_expire_callback;
 };
 
 
@@ -215,14 +215,14 @@ private:
 class sync_timer : public timer_base
 {
 public:
-	///
-	/// @brief constuctor for the sync timer
-	///
-	sync_timer() noexcept
-		: timer_base()
-	{
-		k_timer_init(native_handle(), nullptr, nullptr);
-	}
+  ///
+  /// @brief constuctor for the sync timer
+  ///
+  sync_timer() noexcept
+    : timer_base()
+  {
+    k_timer_init(native_handle(), nullptr, nullptr);
+  }
 };
 
 ///
@@ -232,7 +232,7 @@ public:
 ///
 inline auto make_timer() noexcept
 {
-	return sync_timer();
+  return sync_timer();
 }
 
 ///
@@ -245,7 +245,7 @@ inline auto make_timer() noexcept
 template <class ExpireCallback>
 inline auto make_timer(ExpireCallback ecb) noexcept
 {
-	return basic_timer(ecb);
+  return basic_timer(ecb);
 }
 
 ///
@@ -259,7 +259,7 @@ inline auto make_timer(ExpireCallback ecb) noexcept
 template <class ExpireCallback, class StopCallback>
 inline auto make_timer(ExpireCallback ecb, StopCallback scb) noexcept
 {
-	return timer(ecb, scb);
+  return timer(ecb, scb);
 }
 
 } // namespace zpp

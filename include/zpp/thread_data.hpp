@@ -20,36 +20,37 @@ namespace zpp {
 template <uint32_t StackSize>
 class thread_data {
 public:
-	//
-	// @brief Default constructor
-	//
-	thread_data() noexcept
-	{
-	}
+  //
+  // @brief Default constructor
+  //
+  thread_data() noexcept
+  {
+  }
 private:
-	friend class thread;
+  friend class thread;
 
-	auto stack_data() noexcept
-	{
-		return m_thread_stack;
-	}
+  auto stack_data() noexcept
+  {
+    return m_thread_stack;
+  }
 
-	auto stack_size() const noexcept
-	{
-		return K_THREAD_STACK_SIZEOF(m_thread_stack);
-	}
+  auto stack_size() const noexcept
+  {
+    return K_THREAD_STACK_SIZEOF(m_thread_stack);
+  }
 
-	auto native_thread_ptr() noexcept {
-		return &m_thread_data;
-	}
+  auto native_thread_ptr() noexcept
+  {
+    return &m_thread_data;
+  }
 private:
-	struct k_thread m_thread_data;
-	K_THREAD_STACK_MEMBER(m_thread_stack, StackSize);
+  struct k_thread m_thread_data;
+  K_THREAD_STACK_MEMBER(m_thread_stack, StackSize);
 public:
-	thread_data(const thread_data&) = delete;
-	thread_data(thread_data&&) = delete;
-	thread_data& operator=(const thread_data&) = delete;
-	thread_data& operator=(thread_data&&) = delete;
+  thread_data(const thread_data&) = delete;
+  thread_data(thread_data&&) = delete;
+  thread_data& operator=(const thread_data&) = delete;
+  thread_data& operator=(thread_data&&) = delete;
 };
 
 } // namespace zpp

@@ -21,21 +21,21 @@ namespace zpp {
 ///
 class uptime_clock {
 public:
-	using rep = int64_t;
-	using period = std::nano;
-	using duration = std::chrono::duration<rep, period>;
-	using time_point = std::chrono::time_point<uptime_clock>;
-	static constexpr bool is_steady = false;
+  using rep = int64_t;
+  using period = std::nano;
+  using duration = std::chrono::duration<rep, period>;
+  using time_point = std::chrono::time_point<uptime_clock>;
+  static constexpr bool is_steady = false;
 
-	///
-	/// @brief Get current uptime.
-	///
-	/// @return current uptime as time_point.
-	///
-	static time_point now() noexcept
-	{
-		return time_point(duration(k_ticks_to_ns_floor64(k_uptime_ticks())));
-	}
+  ///
+  /// @brief Get current uptime.
+  ///
+  /// @return current uptime as time_point.
+  ///
+  static time_point now() noexcept
+  {
+    return time_point(duration(k_ticks_to_ns_floor64(k_uptime_ticks())));
+  }
 };
 
 
@@ -44,21 +44,21 @@ public:
 ///
 class cycle_clock {
 public:
-	using rep = uint64_t;
-	using period = std::nano;
-	using duration = std::chrono::duration<rep, period>;
-	using time_point = std::chrono::time_point<cycle_clock>;
-	static constexpr bool is_steady = false;
+  using rep = uint64_t;
+  using period = std::nano;
+  using duration = std::chrono::duration<rep, period>;
+  using time_point = std::chrono::time_point<cycle_clock>;
+  static constexpr bool is_steady = false;
 
-	///
-	/// @brief Get current cycle count.
-	///
-	/// @return current cycle count as time_point
-	///
-	static time_point now() noexcept
-	{
-		return time_point(duration(k_cyc_to_ns_floor64(k_cycle_get_32())));
-	}
+  ///
+  /// @brief Get current cycle count.
+  ///
+  /// @return current cycle count as time_point
+  ///
+  static time_point now() noexcept
+  {
+    return time_point(duration(k_cyc_to_ns_floor64(k_cycle_get_32())));
+  }
 };
 
 ///
@@ -71,9 +71,9 @@ public:
 template< class Rep, class Period >
 constexpr k_ticks_t to_tick( const std::chrono::duration<Rep, Period>& d) noexcept
 {
-	using namespace std::chrono;
+  using namespace std::chrono;
 
-	return k_ns_to_ticks_floor64(duration_cast<nanoseconds>(d).count());
+  return k_ns_to_ticks_floor64(duration_cast<nanoseconds>(d).count());
 }
 
 
@@ -87,7 +87,7 @@ constexpr k_ticks_t to_tick( const std::chrono::duration<Rep, Period>& d) noexce
 template< class Rep, class Period >
 constexpr k_timeout_t to_timeout( const std::chrono::duration<Rep, Period>& d) noexcept
 {
-	return { to_tick(d) };
+  return { to_tick(d) };
 }
 
 } // namespace zpp

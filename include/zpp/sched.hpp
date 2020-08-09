@@ -15,15 +15,17 @@ namespace zpp {
 ///
 /// @brief Lock the scheduler.
 ///
-inline void sched_lock() noexcept {
-	k_sched_lock();
+inline void sched_lock() noexcept
+{
+  k_sched_lock();
 }
 
 ///
 /// @brief Unlock the scheduler.
 ///
-inline void sched_unlock() noexcept {
-	k_sched_unlock();
+inline void sched_unlock() noexcept
+{
+  k_sched_unlock();
 }
 
 ///
@@ -31,24 +33,26 @@ inline void sched_unlock() noexcept {
 ///
 class sched_lock_guard {
 public:
-	///
-	/// @brief Default constructor that calls scheck_lock()
-	///
-	sched_lock_guard() noexcept {
-		sched_lock();
-	}
+  ///
+  /// @brief Default constructor that calls scheck_lock()
+  ///
+  sched_lock_guard() noexcept
+  {
+    sched_lock();
+  }
 
-	///
-	/// @brief Destructor that calls sched_unlock()
-	///
-	~sched_lock_guard() {
-		sched_unlock();
-	}
+  ///
+  /// @brief Destructor that calls sched_unlock()
+  ///
+  ~sched_lock_guard()
+  {
+    sched_unlock();
+  }
 public:
-	sched_lock_guard(const sched_lock_guard&) = delete;
-	sched_lock_guard& operator=(const sched_lock_guard&) = delete;
-	sched_lock_guard(sched_lock_guard&&) noexcept = delete;
-	sched_lock_guard& operator=(sched_lock_guard&&) noexcept = delete;
+  sched_lock_guard(const sched_lock_guard&) = delete;
+  sched_lock_guard& operator=(const sched_lock_guard&) = delete;
+  sched_lock_guard(sched_lock_guard&&) noexcept = delete;
+  sched_lock_guard& operator=(sched_lock_guard&&) noexcept = delete;
 };
 
 } // namespace zpp
