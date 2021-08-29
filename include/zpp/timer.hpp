@@ -41,9 +41,9 @@ public:
   /// @param duration The first time out
   /// @param period the time of the repeat period
   ///
-  template <class Rep1, class Period1, class Rep2, class Period2>
-  void start(const std::chrono::duration<Rep1, Period1>& duration,
-       const std::chrono::duration<Rep2, Period2>& period) noexcept
+  template<class T_Rep1, class T_Period1, class T_Rep2, class T_Period2>
+  void start(const std::chrono::duration<T_Rep1, T_Period1>& duration,
+       const std::chrono::duration<T_Rep2, T_Period2>& period) noexcept
   {
     using namespace std::chrono;
 
@@ -55,8 +55,8 @@ public:
   ///
   /// @param duration The timeout
   ///
-  template <class Rep, class Period>
-  void start(const std::chrono::duration<Rep, Period>& duration) noexcept
+  template<class T_Rep, class T_Period>
+  void start(const std::chrono::duration<T_Rep, T_Period>& duration) noexcept
   {
     using namespace std::chrono;
 
@@ -110,7 +110,7 @@ public:
     return &m_timer;
   }
 private:
-  struct k_timer	m_timer { };
+  struct k_timer m_timer { };
 public:
   timer_base(const timer_base&) = delete;
   timer_base(timer_base&&) = delete;
@@ -124,7 +124,7 @@ public:
 /// @param ExpireCallback Type of the expire callback
 /// @param StopCallback Type of the stop callback
 ///
-template <class ExpireCallback, class StopCallback>
+template<class T_ExpireCallback, class T_StopCallback>
 class timer : public timer_base
 {
 public:
@@ -136,7 +136,7 @@ public:
   /// @param ecb the expire callback
   /// @param scb the stop callbacl
   ///
-  explicit timer(ExpireCallback ecb, StopCallback scb) noexcept
+  explicit timer(T_ExpireCallback ecb, T_StopCallback scb) noexcept
     : timer_base()
     , m_expire_callback(ecb)
     , m_stop_callback(scb)
@@ -164,8 +164,8 @@ private:
     return static_cast<timer*>(k_timer_user_data_get(t));
   }
 private:
-  ExpireCallback	m_expire_callback;
-  StopCallback	m_stop_callback;
+  T_ExpireCallback  m_expire_callback;
+  T_StopCallback    m_stop_callback;
 };
 
 
@@ -174,7 +174,7 @@ private:
 ///
 /// @param ExpireCallback Type of the expire callback
 ///
-template <class ExpireCallback>
+template<class T_ExpireCallback>
 class basic_timer : public timer_base
 {
 public:
@@ -185,7 +185,7 @@ public:
   ///
   /// @param ecb the expire callback
   ///
-  explicit basic_timer(ExpireCallback ecb) noexcept
+  explicit basic_timer(T_ExpireCallback ecb) noexcept
     : timer_base()
     , m_expire_callback(ecb)
   {
@@ -205,7 +205,7 @@ private:
     return static_cast<basic_timer*>(k_timer_user_data_get(t));
   }
 private:
-  ExpireCallback	m_expire_callback;
+  T_ExpireCallback  m_expire_callback;
 };
 
 
@@ -242,10 +242,10 @@ inline auto make_timer() noexcept
 ///
 /// @return basic_timer object
 ///
-template <class ExpireCallback>
-inline auto make_timer(ExpireCallback ecb) noexcept
+template<class T_ExpireCallback>
+inline auto make_timer(T_ExpireCallback&& ecb) noexcept
 {
-  return basic_timer(ecb);
+  return basic_timer(std::forward<T_ExpireCallback>(ecb));
 }
 
 ///
@@ -256,10 +256,10 @@ inline auto make_timer(ExpireCallback ecb) noexcept
 ///
 /// @return timer object
 ///
-template <class ExpireCallback, class StopCallback>
-inline auto make_timer(ExpireCallback ecb, StopCallback scb) noexcept
+template<class T_ExpireCallback, class T_StopCallback>
+inline auto make_timer(T_ExpireCallback&& ecb, T_StopCallback&& scb) noexcept
 {
-  return timer(ecb, scb);
+  return timer(std::forward<T_ExpireCallback>(ecb), std::forward<T_StopCallback>(scb));
 }
 
 } // namespace zpp
