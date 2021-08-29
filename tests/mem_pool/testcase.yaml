@@ -1,5 +1,0 @@
-tests:
-  zpp.mem_pool:
-    arch_exclude: posix
-    platform_exclude: qemu_x86_coverage
-    tags: cpp zpp
