@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Erwin Rol <erwin@erwinrol.com>
+// Copyright (c) 2021 Erwin Rol <erwin@erwinrol.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -10,61 +10,85 @@
 #include <kernel.h>
 #include <sys/__assert.h>
 
+#include <cstdint>
+#include <chrono>
+#include <array>
+
+#include <zpp/utils.hpp>
+
 namespace zpp {
 
 ///
 /// @brief Allocator that uses k_mem_slab for memory
 ///
-/// @param Type the type this Allocator supports
+/// @param T_MemSlab the CRTP type
 ///
-template <class Type>
-class borrowed_mem_slab {
+template<class T_MemSlab>
+class mem_slab_base {
 public:
-  using value_type = Type;
-  using pointer = Type*;
-  using const_pointer = const pointer;
-  using size_type = uint32_t;
+  using native_type = struct k_mem_slab;
+  using native_pointer = native_type*;
+  using native_const_pointer = native_type const *;
+protected:
+  constexpr mem_slab_base() noexcept {}
 public:
-  borrowed_mem_slab() = delete;
-
   ///
-  /// @brief create borrowed_mem_slab using an excisting k_mem_slab
+  /// @brief allocate a memory block, waiting forever
   ///
-  /// @param mem_slab to use for memory allocation
+  /// @return pointer to memory or nullptr on error
   ///
-  constexpr borrowed_mem_slab(k_mem_slab* mem_slab) noexcept
-    : m_mem_slab(mem_slab)
+  [[nodiscard]] void*
+  allocate() noexcept
   {
-    __ASSERT_NO_MSG(m_mem_slab != nullptr);
-    __ASSERT_NO_MSG(m_mem_slab->block_size >= sizeof(value_type));
+    void* vp{nullptr};
+
+    auto rc = k_mem_slab_alloc(native_handle(), &vp, K_FOREVER);
+
+    if (rc == 0) {
+      return vp;
+    } else {
+      return nullptr;
+    }
   }
 
-  template <class U>
-  constexpr borrowed_mem_slab(const borrowed_mem_slab<U>& other) noexcept
-    : m_mem_slab(other.m_mem_slab)
+  ///
+  /// @brief try allocate a memory block, not waiting
+  ///
+  /// @return pointer to memory or nullptr on error
+  ///
+  [[nodiscard]] void*
+  try_allocate() noexcept
   {
-    __ASSERT_NO_MSG(m_mem_slab != nullptr);
-    __ASSERT_NO_MSG(max_size() > 0);
+    void* vp{nullptr};
+
+    auto rc = k_mem_slab_alloc(native_handle(), &vp, K_NO_WAIT);
+
+    if (rc == 0) {
+      return vp;
+    } else {
+      return nullptr;
+    }
   }
 
   ///
-  /// @brief allocate memory for n times sizeof(Type)
+  /// @brief try allocate a memory block waiting with a timeout
   ///
-  /// @param n the number Types to alloc
+  /// @param timeout the time to try
   ///
-  /// @return pointer to memory for n times Type
+  /// @return pointer to memory or nullptr on error
   ///
-  [[nodiscard]] pointer allocate(size_type n) noexcept
+  template<class T_Rep, class T_Period>
+  [[nodiscard]] void*
+  try_allocate_for(const std::chrono::duration<T_Rep, T_Period>& timeout) noexcept
   {
-    __ASSERT_NO_MSG(m_mem_slab != nullptr);
-    __ASSERT_NO_MSG(n <= max_size());
+    using namespace std::chrono;
 
     void* vp{nullptr};
 
-    auto rc = k_mem_slab_alloc(m_mem_slab, &vp, K_FOREVER);
+    auto rc = k_mem_slab_alloc(native_handle(), &vp, to_timeout(timeout));
 
     if (rc == 0) {
-      return static_cast<pointer>(vp);
+      return vp;
     } else {
       return nullptr;
     }
@@ -73,40 +97,33 @@ public:
   ///
   /// @brief deallocate memory
   ///
-  /// @param p the pointer to free
-  /// @param n the number of Type (not used)
+  /// @param vp the pointer to free
   ///
-  void deallocate(pointer p, size_type) noexcept
+  void deallocate(void* vp) noexcept
   {
-    __ASSERT_NO_MSG(m_mem_slab != nullptr);
-    __ASSERT_NO_MSG(p != nullptr);
-
-    void* vp = p;
-    k_mem_slab_free(m_mem_slab, &vp);
+    if (vp != nullptr) {
+      k_mem_slab_free(native_handle(), &vp);
+    }
   }
 
   ///
-  /// @brief get number Type's that can be allocated
+  /// @brief the size of the memory blocks
   ///
-  /// @return the max number of Types that can be allocated
+  /// @return the size of the memory blocks in bytes
   ///
-  constexpr size_type max_size() const noexcept
+  constexpr auto block_size() const noexcept
   {
-    __ASSERT_NO_MSG(m_mem_slab != nullptr);
-
-    return m_mem_slab->block_size / sizeof(value_type);
+    return native_handle()->block_size;
   }
 
   ///
-  /// @brief get maxium number of blocks that can be allocated
+  /// @brief get maximm number of blocks that can be allocated
   ///
-  /// @return the maxium number of blocks that can be allocated
+  /// @return the maximum number of blocks that can be allocated
   ///
-  constexpr auto total_block_count() noexcept
+  constexpr auto total_block_count() const noexcept
   {
-    __ASSERT_NO_MSG(m_mem_slab != nullptr);
-
-    return m_mem_slab->num_blocks;
+    return native_handle()->num_blocks;
   }
 
   ///
@@ -116,9 +133,7 @@ public:
   ///
   constexpr auto used_block_count() noexcept
   {
-    __ASSERT_NO_MSG(m_mem_slab != nullptr);
-
-    return k_mem_slab_num_used_get(m_mem_slab);
+    return k_mem_slab_num_used_get(native_handle());
   }
 
   ///
@@ -128,86 +143,177 @@ public:
   ///
   constexpr auto free_block_count() noexcept
   {
-    __ASSERT_NO_MSG(m_mem_slab != nullptr);
-
-    return k_mem_slab_num_free_get(m_mem_slab);
+    return k_mem_slab_num_free_get(native_handle());
   }
-private:
-  k_mem_slab*	m_mem_slab { nullptr };
+
+
+  ///
+  /// @brief get the native zephyr mem slab handle.
+  ///
+  /// @return A pointer to the zephyr k_mem_slab.
+  ///
+  auto native_handle() noexcept -> native_pointer
+  {
+    return static_cast<T_MemSlab*>(this)->native_handle();
+  }
+
+  ///
+  /// @brief get the native zephyr mem slab handle.
+  ///
+  /// @return A pointer to the zephyr k_mem_slab.
+  ///
+  auto native_handle() const noexcept -> native_const_pointer
+  {
+    return static_cast<const T_MemSlab*>(this)->native_handle();
+  }
+public:
+  mem_slab_base(const mem_slab_base&) = delete;
+  mem_slab_base(mem_slab_base&&) = delete;
+  mem_slab_base& operator=(const mem_slab_base&) = delete;
+  mem_slab_base& operator=(mem_slab_base&&) = delete;
 };
 
 
 ///
-/// @brief compare if two borrowed_mem_pool can be mixed
+/// @brief A memory slab class.
 ///
-/// @return always false
-///
-template <class T, class U>
-constexpr bool
-operator==(const borrowed_mem_slab<T>&, const borrowed_mem_slab<U>&) noexcept
-{
-  return false;
-}
+template<uint32_t T_BlockSize, uint32_t T_BlockCount, uint32_t T_Align=sizeof(void*)>
+class mem_slab : public mem_slab_base<mem_slab<T_BlockSize, T_BlockCount, T_Align>> {
+public:
+  using typename mem_slab_base<mem_slab<T_BlockSize, T_BlockCount, T_Align>>::native_type;
+  using typename mem_slab_base<mem_slab<T_BlockSize, T_BlockCount, T_Align>>::native_pointer;
+  using typename mem_slab_base<mem_slab<T_BlockSize, T_BlockCount, T_Align>>::native_const_pointer;
+public:
+  ///
+  /// @brief Default constructor
+  ///
+  mem_slab() noexcept
+  {
+    static_assert(T_BlockCount > 0);
+    static_assert(is_multiple_of(T_BlockSize, 4) == true);
+    static_assert(T_Align >= sizeof(void*));
+    static_assert(is_power_of_two(T_Align));
+    static_assert(T_BlockSize >= T_Align);
+    static_assert((T_BlockSize % T_Align) == 0);
+
+    k_mem_slab_init(&m_mem_slab, m_mem_buffer.data(), T_BlockSize, T_BlockCount);
+  }
+
+  ///
+  /// @brief get the native zephyr mem slab handle.
+  ///
+  /// @return A pointer to the zephyr k_mem_slab.
+  ///
+  constexpr auto native_handle() noexcept -> native_pointer
+  {
+    return &m_mem_slab;
+  }
+
+  ///
+  /// @brief get the native zephyr mem slab handle.
+  ///
+  /// @return A pointer to the zephyr k_mem_slab.
+  ///
+  constexpr auto native_handle() const noexcept -> native_const_pointer
+  {
+    return &m_mem_slab;
+  }
+private:
+  native_type                                                       m_mem_slab{};
+  alignas(T_Align) std::array<uint8_t, T_BlockSize * T_BlockCount>  m_mem_buffer;
+public:
+  mem_slab(const mem_slab&) = delete;
+  mem_slab(mem_slab&&) = delete;
+  mem_slab& operator=(const mem_slab&) = delete;
+  mem_slab& operator=(mem_slab&&) = delete;
+};
 
 ///
-/// @brief compare if two borrowed_mem_pool can be mixed
+/// @brief A mem_slab class referencing another mem slab object.
 ///
-/// @return always true
-///
-template <class T, class U>
-constexpr bool
-operator!=(const borrowed_mem_slab<T>&, const borrowed_mem_slab<U>&) noexcept
-{
-  return true;
-}
+class mem_slab_ref : public mem_slab_base<mem_slab_ref> {
+public:
+  ///
+  /// @brief Construct a reference to a native k_mem_slab*
+  ///
+  /// @param m The k_mem_slab to reference. @a m must already be
+  ///          initialized and will not be freed.
+  ///
+  explicit constexpr mem_slab_ref(native_pointer m) noexcept
+    : m_mem_slab_ptr(m)
+  {
+    __ASSERT_NO_MSG(m_mem_slab_ptr != nullptr);
+  }
 
-template <typename Type, size_t ContCount>
-constexpr size_t mem_slab_block_size() noexcept
-{
-  static_assert(ContCount > 0);
+  ///
+  /// @brief Construct a reference to another mem_slab object
+  ///
+  /// @param m The object to reference. @a m must already be
+  ///          initialized and will not be freed.
+  ///
+  template<class T_MemSlab>
+  explicit constexpr mem_slab_ref(T_MemSlab& m) noexcept
+    : m_mem_slab_ptr(m.native_handle())
+  {
+    __ASSERT_NO_MSG(m_mem_slab_ptr != nullptr);
+  }
 
-  constexpr auto block_size = sizeof(Type) * ContCount;
+  ///
+  /// @brief Assign a new native k_mem_slab* object
+  ///
+  /// @param m The k_mem_slab to reference. @a m must already be
+  ///          initialized and will not be freed.
+  ///
+  /// @return reference to this object
+  ///
+  constexpr mem_slab_ref& operator=(native_pointer m) noexcept
+  {
+    m_mem_slab_ptr = m;
+    __ASSERT_NO_MSG(m_mem_slab_ptr != nullptr);
+    return *this;
+  }
 
-  // must be a multiple of 4
-  return ((block_size + 3) / 4) * 4;
-}
+  ///
+  /// @brief Assign a new native mem slab object
+  ///
+  /// @param m The object to reference. @a m must already be
+  ///          initialized and will not be freed.
+  ///
+  /// @return reference to this object
+  ///
+  template<class T_MemSlab>
+  constexpr mem_slab_ref& operator=(T_MemSlab& m) noexcept
+  {
+    m_mem_slab_ptr = m.native_handle();
+    __ASSERT_NO_MSG(m_mem_slab_ptr != nullptr);
+    return *this;
+  }
 
-template <typename Type, size_t ContCount, size_t MemSize>
-constexpr size_t mem_slab_block_count() noexcept
-{
-  constexpr auto block_size = mem_slab_block_size<Type, ContCount>();
+  ///
+  /// @brief get the native zephyr mem slab handle.
+  ///
+  /// @return A pointer to the zephyr k_mem_slab.
+  ///
+  constexpr auto native_handle() noexcept -> native_pointer
+  {
+    return m_mem_slab_ptr;
+  }
 
-  static_assert(MemSize >= block_size);
-
-  return MemSize / block_size;
-}
+  ///
+  /// @brief get the native zephyr mem slab handle.
+  ///
+  /// @return A pointer to the zephyr k_mem_slab.
+  ///
+  constexpr auto native_handle() const noexcept -> native_const_pointer
+  {
+    return m_mem_slab_ptr;
+  }
+private:
+  native_pointer m_mem_slab_ptr{ nullptr };
+public:
+  mem_slab_ref() = delete;
+};
 
 } // namespace zpp
-
-
-///
-/// @brief define a borrowed_mem_slab
-///
-/// @param name the name of the object
-/// @param Type the type of the objects in the pool
-/// @param ContCount the continuous number of Type's that are supported
-/// @param MemSize the size of the pool in bytes
-///
-#define ZPP_MEM_SLAB_DEFINE(name, Type, ContCount, MemSize) \
-  \
-  namespace { \
-  constexpr auto block_size_##name = ::zpp::mem_slab_block_size< \
-              Type, \
-              ContCount>(); \
-  constexpr auto block_count_##name = ::zpp::mem_slab_block_count< \
-              Type, \
-              ContCount, \
-              MemSize>(); \
-  K_MEM_SLAB_DEFINE(native_##name, \
-    block_size_##name, \
-    block_count_##name, \
-    alignof(Type)); \
-  } \
-  ::zpp::borrowed_mem_slab<Type> name(&native_##name)
 
 #endif // ZPP_INCLUDE_ZPP_MEM_SLAB_HPP
