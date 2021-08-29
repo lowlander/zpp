@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE_ZPP_ATOMIC_BITSET_HPP
-#define ZPP__INCLUDE_ZPP_ATOMIC_BITSET_HPP
+#ifndef ZPP_INCLUDE_ZPP_ATOMIC_BITSET_HPP
+#define ZPP_INCLUDE_ZPP_ATOMIC_BITSET_HPP
 
 #include <sys/atomic.h>
 #include <sys/__assert.h>
@@ -19,7 +19,7 @@ namespace zpp {
 ///
 /// @param BitsetSize the size of the bitset in bits
 ///
-template<size_t BitsetSize>
+template<size_t T_BitsetSize>
 class atomic_bitset {
 public:
   ///
@@ -28,9 +28,7 @@ public:
   /// The default constructor initializes the atomic_bitset
   /// to all bits set to 0.
   ///
-  constexpr atomic_bitset() noexcept
-  {
-  }
+  constexpr atomic_bitset() noexcept = default;
 
   ///
   /// @brief return size of the bitset
@@ -39,7 +37,7 @@ public:
   ///
   constexpr size_t bit_count() const noexcept
   {
-    return BitsetSize;
+    return T_BitsetSize;
   }
 
   ///
@@ -51,7 +49,7 @@ public:
   ///
   [[nodiscard]] bool load(size_t bit) const noexcept
   {
-    __ASSERT_NO_MSG(bit < BitsetSize);
+    __ASSERT_NO_MSG(bit < T_BitsetSize);
     return atomic_test_bit(m_var, bit);
   }
 
@@ -63,7 +61,7 @@ public:
   ///
   void store(size_t bit, bool val) noexcept
   {
-    __ASSERT_NO_MSG(bit < BitsetSize);
+    __ASSERT_NO_MSG(bit < T_BitsetSize);
     atomic_set_bit_to(m_var, bit, val);
   }
 
@@ -74,7 +72,7 @@ public:
   ///
   void set(size_t bit) noexcept
   {
-    __ASSERT_NO_MSG(bit < BitsetSize);
+    __ASSERT_NO_MSG(bit < T_BitsetSize);
     atomic_set_bit(m_var, bit);
   }
 
@@ -85,7 +83,7 @@ public:
   ///
   void clear(size_t bit) noexcept
   {
-    __ASSERT_NO_MSG(bit < BitsetSize);
+    __ASSERT_NO_MSG(bit < T_BitsetSize);
     atomic_clear_bit(m_var, bit);
   }
 
@@ -98,7 +96,7 @@ public:
   ///
   [[nodiscard]] bool fetch_and_clear(size_t bit) noexcept
   {
-    __ASSERT_NO_MSG(bit < BitsetSize);
+    __ASSERT_NO_MSG(bit < T_BitsetSize);
     return atomic_test_and_clear_bit(m_var, bit);
   }
 
@@ -111,11 +109,11 @@ public:
   ///
   [[nodiscard]] bool fetch_and_set(size_t bit) noexcept
   {
-    __ASSERT_NO_MSG(bit < BitsetSize);
+    __ASSERT_NO_MSG(bit < T_BitsetSize);
     return atomic_test_and_set_bit(m_var, bit);
   }
 private:
-  ATOMIC_DEFINE(m_var, BitsetSize) {};
+  ATOMIC_DEFINE(m_var, T_BitsetSize) {};
 public:
   atomic_bitset(const atomic_bitset&) = delete;
   atomic_bitset(atomic_bitset&&) = delete;
