@@ -18,41 +18,50 @@
 namespace zpp {
 
 ///
-/// @brief obligated base class to use for fifo items
+/// @brief Fifo CRTP base class
 ///
-struct fifo_item_base {
-  void* reserved { nullptr };
-};
-
+/// @param T_BaseFifoType the CRTP derived type
+/// @param T_BaseItemType the item to store in this fifo
 ///
-/// @brief fifo base class
-///
-/// @param FifoType the CRTP derived type
-/// @param ItemType the item to store in this fifo
-///
-template<typename FifoType, typename ItemType>
+template<template<typename> typename T_BaseFifoType, typename T_BaseItemType>
 class fifo_base {
+public:
+  using native_type = struct k_fifo;
+  using native_pointer = native_type *;
+  using native_const_pointer = native_type const *;
+
+  using item_type = T_BaseItemType;
+  using item_pointer = item_type*;
+  using item_const_pointer = item_type const *;
 protected:
   ///
   /// @brief default constructor, can only be called from derived types
   ///
   fifo_base() noexcept
   {
-    static_assert(std::is_standard_layout<fifo_item_base>::value);
-    static_assert(std::is_pointer<decltype(fifo_item_base::reserved)>::value);
-    static_assert(offsetof(fifo_item_base, reserved) == 0);
-    static_assert(std::is_base_of<fifo_item_base, ItemType>::value);
+    static_assert(std::is_standard_layout_v<item_type>);
+    static_assert(std::is_same_v<void*, decltype(item_type::fifo_reserved)>);
+    static_assert(offsetof(item_type, fifo_reserved) == 0);
   }
-
 public:
   ///
   /// @brief get the Zephyr native fifo handle
   ///
   /// @return pointer to a k_fifo
   ///
-  [[nodiscard]] auto native_handle() noexcept
+  [[nodiscard]] constexpr auto native_handle() noexcept -> native_pointer
   {
-    return static_cast<FifoType*>(this)->native_handle();
+    return static_cast<T_BaseFifoType<item_type>*>(this)->native_handle();
+  }
+
+  ///
+  /// @brief get the Zephyr native fifo handle
+  ///
+  /// @return pointer to a k_fifo
+  ///
+  [[nodiscard]] constexpr auto native_handle() const noexcept -> native_const_pointer
+  {
+    return static_cast<const T_BaseFifoType<item_type>*>(this)->native_handle();
   }
 
   ///
@@ -68,7 +77,7 @@ public:
   ///
   /// @param item Pointer to a item, the fifo does not take ownership
   ///
-  void push_back(ItemType* item) noexcept
+  void push_back(item_pointer item) noexcept
   {
     k_fifo_put(native_handle(), item);
   }
@@ -78,10 +87,10 @@ public:
   ///
   /// @return the item or nullptr on error
   ///
-  [[nodiscard]] ItemType*
+  [[nodiscard]] item_pointer
   pop_front() noexcept
   {
-    return static_cast<ItemType*>(
+    return static_cast<item_pointer>(
       k_fifo_get(native_handle(), K_FOREVER));
   }
 
@@ -90,25 +99,27 @@ public:
   ///
   /// @return the item or nullptr on error/timeout
   ///
-  [[nodiscard]] ItemType*
+  [[nodiscard]] item_pointer
   try_pop_front() noexcept
   {
-    return static_cast<ItemType*>(
+    return static_cast<item_pointer>(
       k_fifo_get(native_handle(), K_NO_WAIT));
   }
 
   ///
   /// @brief try to pop item from the fifo waiting a certain amount of time
   ///
+  /// @param timeout The timeout before returning
+  ///
   /// @return the item or nullptr on error/timeout
   ///
-  template <class Rep, class Period>
-  [[nodiscard]] ItemType*
-  try_pop_front_for(const std::chrono::duration<Rep, Period>& timeout) noexcept
+  template <class T_Rep, class T_Period>
+  [[nodiscard]] item_pointer
+  try_pop_front_for(const std::chrono::duration<T_Rep, T_Period>& timeout) noexcept
   {
     using namespace std::chrono;
 
-    return static_cast<ItemType*>(
+    return static_cast<item_pointer>(
       k_fifo_get(native_handle(),
       duration_cast<milliseconds>(timeout).count()));
   }
@@ -118,10 +129,10 @@ public:
   ///
   /// @return the item or nullptr on error/timeout
   ///
-  [[nodiscard]] ItemType*
+  [[nodiscard]] item_pointer
   front() noexcept
   {
-    return static_cast<ItemType*>(
+    return static_cast<item_pointer>(
       k_fifo_peek_head(native_handle()));
   }
 
@@ -130,9 +141,9 @@ public:
   ///
   /// @return the item or nullptr on error/timeout
   ///
-  [[nodiscard]] ItemType* back() noexcept
+  [[nodiscard]] item_pointer back() noexcept
   {
-    return static_cast<ItemType*>(
+    return static_cast<item_pointer>(
       k_fifo_peek_tail(native_handle()));
   }
 
@@ -160,8 +171,12 @@ public:
 ///
 /// @brief fifo that manages a k_fifo object
 ///
-template<typename ItemType>
-class fifo : public fifo_base<fifo<ItemType>, ItemType> {
+template<typename T_ItemType>
+class fifo : public fifo_base<fifo, T_ItemType> {
+public:
+  using typename fifo_base<fifo, T_ItemType>::native_type;
+  using typename fifo_base<fifo, T_ItemType>::native_pointer;
+  using typename fifo_base<fifo, T_ItemType>::native_const_pointer;
 public:
   ///
   /// @brief create new fifo
@@ -176,12 +191,22 @@ public:
   ///
   /// @return pointer to a k_fifo
   ///
-  [[nodiscard]] auto native_handle() noexcept
+  [[nodiscard]] constexpr auto native_handle() noexcept -> native_pointer
+  {
+    return &m_fifo;
+  }
+
+  ///
+  /// @brief get the Zephyr native fifo handle
+  ///
+  /// @return pointer to a k_fifo
+  ///
+  [[nodiscard]] constexpr auto native_handle() const noexcept -> native_const_pointer
   {
     return &m_fifo;
   }
 private:
-  struct k_fifo m_fifo;
+  native_type m_fifo;
 public:
   fifo(const fifo&) = delete;
   fifo(fifo&&) = delete;
@@ -190,19 +215,73 @@ public:
 };
 
 ///
-/// @brief fifo that borrowes a k_fifo object
+/// @brief fifo that references a k_fifo object
 ///
-template<typename ItemType>
-class borrowed_fifo : public fifo_base<fifo<ItemType>, ItemType> {
+template<typename T_ItemType>
+class fifo_ref : public fifo_base<fifo_ref, T_ItemType> {
+public:
+  using typename fifo_base<fifo_ref, T_ItemType>::native_type;
+  using typename fifo_base<fifo_ref, T_ItemType>::native_pointer;
+  using typename fifo_base<fifo_ref, T_ItemType>::native_const_pointer;
 public:
   ///
   /// @brief wrap k_fifo
   ///
-  /// @param f the k_fifo to borrow
+  /// @param f the k_fifo to reference
   ///
-  borrowed_fifo(struct k_fifo* f) noexcept
+  /// @warning @a f must stay valid for the lifetime of this object
+  ///
+  constexpr explicit fifo_ref(native_pointer f) noexcept
     : m_fifo_ptr(f)
   {
+    __ASSERT_NO_MSG(m_fifo_ptr != nullptr);
+  }
+
+  ///
+  /// @brief Reference another fifo object
+  ///
+  /// @param f the object to reference
+  ///
+  /// @warning @a f must stay valid for the lifetime of this object
+  ///
+  template<template<class> class T_Fifo>
+  constexpr explicit fifo_ref(T_Fifo<T_ItemType>& f) noexcept
+    : m_fifo_ptr(f.native_handle())
+  {
+    __ASSERT_NO_MSG(m_fifo_ptr != nullptr);
+  }
+
+  ///
+  /// @brief Reference another fifo object
+  ///
+  /// @param f the object to reference
+  ///
+  /// @return *this
+  ///
+  /// @warning @a f must stay valid for the lifetime of this object
+  ///
+  constexpr fifo_ref& operator=(native_pointer f) noexcept
+  {
+    m_fifo_ptr = f;
+    __ASSERT_NO_MSG(m_fifo_ptr != nullptr);
+    return *this;
+  }
+
+  ///
+  /// @brief Reference another fifo object
+  ///
+  /// @param f the object to reference
+  ///
+  /// @return *this
+  ///
+  /// @warning @a f must stay valid for the lifetime of this object
+  ///
+  template<template<class> class T_Fifo>
+  constexpr fifo_ref& operator=(const T_Fifo<T_ItemType>& f) noexcept
+  {
+    m_fifo_ptr = f.native_handle();
+    __ASSERT_NO_MSG(m_fifo_ptr != nullptr);
+    return *this;
   }
 
   ///
@@ -210,17 +289,24 @@ public:
   ///
   /// @return pointer to a k_fifo
   ///
-  [[nodiscard]] auto native_handle() noexcept
+  [[nodiscard]] constexpr auto native_handle() noexcept -> native_pointer
+  {
+    return m_fifo_ptr;
+  }
+
+  ///
+  /// @brief get the Zephyr native fifo handle
+  ///
+  /// @return pointer to a k_fifo
+  ///
+  [[nodiscard]] constexpr auto native_handle() const noexcept -> native_const_pointer
   {
     return m_fifo_ptr;
   }
 private:
-  struct k_fifo* m_fifo_ptr{ nullptr };
+  native_pointer m_fifo_ptr{ nullptr };
 public:
-  borrowed_fifo(const borrowed_fifo&) = delete;
-  borrowed_fifo(borrowed_fifo&&) = delete;
-  borrowed_fifo& operator=(const borrowed_fifo&) = delete;
-  borrowed_fifo& operator=(borrowed_fifo&&) = delete;
+  fifo_ref() = delete;
 };
 
 } // namespace zpp
