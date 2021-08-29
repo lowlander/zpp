@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE_ZPP_ATOMIC_VAR_HPP
-#define ZPP__INCLUDE_ZPP_ATOMIC_VAR_HPP
+#ifndef ZPP_INCLUDE_ZPP_ATOMIC_VAR_HPP
+#define ZPP_INCLUDE_ZPP_ATOMIC_VAR_HPP
 
 #include <sys/atomic.h>
 #include <sys/__assert.h>
@@ -27,9 +27,7 @@ public:
   ///
   /// @brief default constructor that sets the value to 0
   ///
-  constexpr atomic_var() noexcept
-  {
-  }
+  constexpr atomic_var() noexcept = default;
 
   ///
   /// @brief constructor that sets the value to v
@@ -37,8 +35,31 @@ public:
   /// @param v the value to initialize the atomic_var with
   ///
   constexpr explicit atomic_var(value_type v) noexcept
-    : m_var(v)
   {
+    store(v);
+  }
+
+  ///
+  /// @brief copy constructor
+  ///
+  /// @param rhs the value to initialize the atomic_var with
+  ///
+  atomic_var(const atomic_var& rhs) noexcept
+  {
+    store(rhs.load());
+  }
+
+  ///
+  /// @brief copy operator
+  ///
+  /// @param rhs the value to initialize the atomic_var with
+  ///
+  /// @return *this
+  ///
+  atomic_var& operator=(const atomic_var& rhs) noexcept
+  {
+    store(rhs.load());
+    return *this;
   }
 
   ///
@@ -433,13 +454,8 @@ public:
   }
 private:
   atomic_t m_var{};
-public:
-  atomic_var(const atomic_var&) = delete;
-  atomic_var(atomic_var&&) = delete;
-  atomic_var& operator=(const atomic_var&) = delete;
-  atomic_var& operator=(atomic_var&&) = delete;
 };
 
 } // namespace zpp
 
-#endif // ZPP__INCLUDE_ZPP_ATOMIC_VAR_HPP
+#endif // ZPP_INCLUDE_ZPP_ATOMIC_VAR_HPP
