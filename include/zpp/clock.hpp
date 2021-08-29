@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZPP__INCLUDE_ZPP_CLOCK_HPP
-#define ZPP__INCLUDE_ZPP_CLOCK_HPP
+#ifndef ZPP_INCLUDE_ZPP_CLOCK_HPP
+#define ZPP_INCLUDE_ZPP_CLOCK_HPP
 
 #include <kernel.h>
 #include <sys_clock.h>
@@ -68,8 +68,8 @@ public:
 ///
 /// @return the number of tick @a d represents
 ///
-template< class Rep, class Period >
-constexpr k_ticks_t to_tick( const std::chrono::duration<Rep, Period>& d) noexcept
+template<class T_Rep, class T_Period>
+constexpr k_ticks_t to_tick(const std::chrono::duration<T_Rep, T_Period>& d) noexcept
 {
   using namespace std::chrono;
 
@@ -84,8 +84,8 @@ constexpr k_ticks_t to_tick( const std::chrono::duration<Rep, Period>& d) noexce
 ///
 /// @return the number of tick @a d represents
 ///
-template< class Rep, class Period >
-constexpr k_timeout_t to_timeout( const std::chrono::duration<Rep, Period>& d) noexcept
+template<class T_Rep, class T_Period>
+constexpr k_timeout_t to_timeout(const std::chrono::duration<T_Rep, T_Period>& d) noexcept
 {
   return { to_tick(d) };
 }
