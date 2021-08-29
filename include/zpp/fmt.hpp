@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <chrono>
+#include <utility>
 
 namespace zpp {
 
@@ -33,8 +34,8 @@ inline void print_arg(int32_t v) noexcept { printk("%d", v); }
 inline void print_arg(uint64_t v) noexcept { printk("%lld", v); }
 inline void print_arg(int64_t v) noexcept { printk("%lld", v); }
 
-template < class Rep, class Period>
-inline void print_arg(std::chrono::duration<Rep, Period> v)
+template<class T_Rep, class T_Period>
+inline void print_arg(std::chrono::duration<T_Rep, T_Period> v)
 {
   using namespace std::chrono;
 
@@ -51,8 +52,8 @@ inline void print_arg(std::chrono::duration<Rep, Period> v)
     (int)us.count(), (int)ns.count());
 }
 
-template<class Clock>
-inline void print_arg(std::chrono::time_point<Clock> v)
+template<class T_Clock>
+inline void print_arg(std::chrono::time_point<T_Clock> v)
 {
   print_arg(v.time_since_epoch());
 }
@@ -62,9 +63,8 @@ inline void print_helper(const char* fmt) noexcept
   printk("%s", fmt);
 }
 
-template<class FirstArg, class ...Args>
-inline void print_helper(const char* fmt,
-      FirstArg first, Args... args) noexcept
+template<class T_FirstArg, class ...T_Args>
+inline void print_helper(const char* fmt, T_FirstArg&& first, T_Args&&... args) noexcept
 {
   enum class state { normal, format, open_brace, close_brace, done };
 
@@ -137,8 +137,8 @@ inline void print_helper(const char* fmt,
     }
   }
 
-  print_arg(first);
-  print_helper(&(fmt[n]), args...);
+  print_arg(std::forward<T_FirstArg>(first));
+  print_helper(&(fmt[n]), std::forward<T_Args>(args)...);
 }
 
 } // namespace internal
@@ -148,15 +148,15 @@ inline void print_helper(const char* fmt,
 ///
 /// print uses the same format string syntax as the fmt C++ lib, just
 /// that the feature set is very limited. It only supports {} without
-/// anny options, for example print("Nr: {}", 1);
+/// any options, for example print("Nr: {}", 1);
 ///
 /// @param fmt The format string using {} as place holder
 /// @param args The needed arguments to print
 ///
-template<class ...Args>
-inline void print(const char* fmt, Args... args) noexcept
+template<class ...T_Args>
+inline void print(const char* fmt, T_Args&&... args) noexcept
 {
-  internal::print_helper(fmt, args...);
+  internal::print_helper(fmt, std::forward<T_Args>(args)...);
 }
 
 } // namespace zpp
