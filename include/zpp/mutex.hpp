@@ -11,28 +11,30 @@
 #include <sys/__assert.h>
 
 #include <chrono>
-#include <mutex>
 
 namespace zpp {
 
 ///
-/// @brief A recursive mutex class.
+/// @brief A recursive mutex CRTP base class.
 ///
-template<typename Mutex>
+template<typename T_Mutex>
 class mutex_base
 {
+public:
+  using native_type = struct k_mutex;
+  using native_pointer = native_type*;
+  using native_const_pointer = native_type const *;
 protected:
   ///
-  /// @brief Default contructor
+  /// @brief Protected default constructor so only derived objects can be created
   ///
   constexpr mutex_base() noexcept
   {
   }
 
 public:
-
   ///
-  /// @brief Lock the mutex. Wait for ever until it is locked.
+  /// @brief Lock the mutex. Wait forever until it is locked.
   ///
   /// @return true if successfully locked.
   ///
@@ -66,9 +68,9 @@ public:
   ///
   /// @return true if successfully locked.
   ///
-  template < class Rep, class Period>
+  template<class T_Rep, class T_Period>
   [[nodiscard]] bool
-  try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept
+  try_lock_for(const std::chrono::duration<T_Rep, T_Period>& timeout) noexcept
   {
     using namespace std::chrono;
 
@@ -83,9 +85,15 @@ public:
   ///
   /// @brief Unlock the mutex.
   ///
-  void unlock() noexcept
+  /// @return true on success
+  ///
+  [[nodiscard]] bool unlock() noexcept
   {
-    k_mutex_unlock(native_handle());
+    if (k_mutex_unlock(native_handle()) == 0) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   ///
@@ -93,9 +101,19 @@ public:
   ///
   /// @return A pointer to the zephyr k_mutex.
   ///
-  auto native_handle() noexcept
+  auto native_handle() noexcept -> native_pointer
   {
-    return static_cast<Mutex*>(this)->native_handle();
+    return static_cast<T_Mutex*>(this)->native_handle();
+  }
+
+  ///
+  /// @brief get the native zephyr mutex handle.
+  ///
+  /// @return A pointer to the zephyr k_mutex.
+  ///
+  auto native_handle() const noexcept -> native_const_pointer
+  {
+    return static_cast<const T_Mutex*>(this)->native_handle();
   }
 public:
   mutex_base(const mutex_base&) = delete;
@@ -122,12 +140,22 @@ public:
   ///
   /// @return A pointer to the zephyr k_mutex.
   ///
-  constexpr auto native_handle() noexcept
+  constexpr auto native_handle() noexcept -> native_pointer
+  {
+    return &m_mutex;
+  }
+
+  ///
+  /// @brief get the native zephyr mutex handle.
+  ///
+  /// @return A pointer to the zephyr k_mutex.
+  ///
+  constexpr auto native_handle() const noexcept -> native_const_pointer
   {
     return &m_mutex;
   }
 private:
-  struct k_mutex m_mutex;
+  native_type m_mutex{};
 public:
   mutex(const mutex&) = delete;
   mutex(mutex&&) = delete;
@@ -138,18 +166,62 @@ public:
 ///
 /// @brief A recursive mutex class borrowing the native mutex.
 ///
-class borrowed_mutex : public mutex_base<borrowed_mutex> {
+class mutex_ref : public mutex_base<mutex_ref> {
 public:
   ///
-  /// @brief Contruct a mutex using a native k_mutex*
+  /// @brief Construct a mutex using a native k_mutex*
   ///
   /// @param m The k_mutex to use. @a m must already be
   ///          initialized and will not be freed.
   ///
-  explicit constexpr borrowed_mutex(struct k_mutex* m) noexcept
+  explicit constexpr mutex_ref(native_pointer m) noexcept
     : m_mutex_ptr(m)
   {
     __ASSERT_NO_MSG(m_mutex_ptr != nullptr);
+  }
+
+  ///
+  /// @brief Construct a mutex using another mutex object
+  ///
+  /// @param m The mutex object to use. @a m must already be
+  ///          initialized and will not be freed.
+  ///
+  template<class T_Mutex>
+  explicit constexpr mutex_ref(T_Mutex& m) noexcept
+    : m_mutex_ptr(m.native_handle())
+  {
+    __ASSERT_NO_MSG(m_mutex_ptr != nullptr);
+  }
+
+  ///
+  /// @brief Assing another mutex object
+  ///
+  /// @param m The k_mutex to use. @a m must already be
+  ///          initialized and will not be freed.
+  ///
+  /// @return reference to this object
+  ///
+  constexpr mutex_ref& operator=(native_pointer m) noexcept
+  {
+    m_mutex_ptr = m;
+    __ASSERT_NO_MSG(m_mutex_ptr != nullptr);
+    return *this;
+  }
+
+  ///
+  /// @brief Assing another mutex object
+  ///
+  /// @param m The mutex object to use. @a m must already be
+  ///          initialized and will not be freed.
+  ///
+  /// @return reference to this object
+  ///
+  template<class T_Mutex>
+  constexpr mutex_ref& operator=(T_Mutex& m) noexcept
+  {
+    m_mutex_ptr = m.native_handle();
+    __ASSERT_NO_MSG(m_mutex_ptr != nullptr);
+    return *this;
   }
 
   ///
@@ -157,41 +229,24 @@ public:
   ///
   /// @return A pointer to the zephyr k_mutex.
   ///
-  constexpr auto native_handle() noexcept
+  constexpr auto native_handle() noexcept -> native_pointer
   {
-    __ASSERT_NO_MSG(m_mutex_ptr != nullptr);
+    return m_mutex_ptr;
+  }
 
+  ///
+  /// @brief get the native zephyr mutex handle.
+  ///
+  /// @return A pointer to the zephyr k_mutex.
+  ///
+  constexpr auto native_handle() const noexcept -> native_const_pointer
+  {
     return m_mutex_ptr;
   }
 private:
-  struct k_mutex* m_mutex_ptr{ nullptr };
+  native_pointer m_mutex_ptr{ nullptr };
 public:
-  borrowed_mutex(const borrowed_mutex&) = delete;
-  borrowed_mutex(borrowed_mutex&&) = delete;
-  borrowed_mutex& operator=(const borrowed_mutex&) = delete;
-  borrowed_mutex& operator=(borrowed_mutex&&) = delete;
-};
-
-
-///
-/// @brief std::lock_guard using zpp::mutex as a lock.
-///
-template <typename Mutex>
-class lock_guard {
-public:
-  explicit lock_guard(Mutex& lock) noexcept
-    : m_lock(lock)
-  {
-    auto res = m_lock.lock();
-    __ASSERT_NO_MSG(res != false);
-  }
-
-  ~lock_guard()
-  {
-    m_lock.unlock();
-  }
-private:
-  Mutex& m_lock;
+  mutex_ref() = delete;
 };
 
 } // namespace zpp
