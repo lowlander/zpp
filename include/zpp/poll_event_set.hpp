@@ -16,6 +16,7 @@
 #include <limits>
 #include <optional>
 #include <array>
+#include <utility>
 
 #include <zpp/clock.hpp>
 
@@ -32,7 +33,7 @@ namespace zpp {
 ///
 /// @param Size the size of the set
 ///
-template<int Size>
+template<int T_Size>
 class poll_event_set
 {
 public:
@@ -47,14 +48,14 @@ public:
   }
 
   ///
-  /// @brief constuctor that takes argments for initialization
+  /// @brief constructor that takes arguments for initialization
   ///
   /// @param t the arguments to use for initialization
   ///
-  template <class... T>
-  poll_event_set(T&&... t) noexcept
+  template <class... T_Args>
+  poll_event_set(T_Args&&... t) noexcept
   {
-    assign(0, t...);
+    assign(0, std::forward<T_Args>(t)...);
   }
 
   ///
@@ -66,7 +67,7 @@ public:
   ///
   auto operator[](size_t idx) noexcept
   {
-    __ASSERT_NO_MSG(idx < Size);
+    __ASSERT_NO_MSG(idx < T_Size);
     return poll_event(&m_events[idx]);
   }
 
@@ -97,8 +98,8 @@ public:
   ///
   /// @return false on error
   ///
-  template < class Rep, class Period>
-  auto try_poll_for(const std::chrono::duration<Rep, Period>&
+  template<class T_Rep, class T_Period>
+  auto try_poll_for(const std::chrono::duration<T_Rep, T_Period>&
             timeout) noexcept
   {
     using namespace std::chrono;
@@ -106,18 +107,39 @@ public:
     return poll(to_timeout(timeout));
   }
 private:
+  ///
+  /// @brief try poll events waiting for e certain time
+  ///
+  /// @param timeout the time to wait
+  ///
+  /// @return false on error
+  ///
   void assign(int index) noexcept
   {
-    __ASSERT_NO_MSG(index == Size);
+    __ASSERT_NO_MSG(index == T_Size);
   }
 
-  template <class First, class... T>
-  void assign(int index, First&& f, T&&... t) noexcept
+  ///
+  /// @brief try poll events waiting for e certain time
+  ///
+  /// @param timeout the time to wait
+  ///
+  /// @return false on error
+  ///
+  template<class T_FirstArg, class... T_Args>
+  void assign(int index, T_FirstArg&& f, T_Args&&... t) noexcept
   {
-    poll_event(&m_events[index]).assign(f);
-    assign(index+1, t...);
+    poll_event(&m_events[index]).assign(std::forward<T_FirstArg>(f));
+    assign(index+1, std::forward<T_Args>(t)...);
   }
 
+  ///
+  /// @brief try poll events waiting for e certain time
+  ///
+  /// @param timeout the time to wait
+  ///
+  /// @return false on error
+  ///
   auto poll(k_timeout_t timeout) noexcept
   {
     for (auto& e: m_events) {
@@ -137,11 +159,18 @@ private:
     }
   }
 private:
-  std::array<struct k_poll_event, Size> m_events;
+  std::array<struct k_poll_event, T_Size> m_events;
 };
 
-template <class... T>
-poll_event_set(T&&... t) noexcept -> poll_event_set<sizeof...(T)>;
+///
+/// @brief try poll events waiting for e certain time
+///
+/// @param timeout the time to wait
+///
+/// @return false on error
+///
+template <class... T_Args>
+poll_event_set(T_Args&&... t) noexcept -> poll_event_set<sizeof...(T_Args)>;
 
 } // namespace zpp
 

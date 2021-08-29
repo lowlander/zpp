@@ -19,6 +19,7 @@
 
 #include <zpp/sem.hpp>
 #include <zpp/fifo.hpp>
+#include <zpp/poll_signal.hpp>
 
 namespace zpp {
 
@@ -68,14 +69,28 @@ public:
   ///
   /// @param s the semaphore to poll
   ///
-  template<typename SemType>
-  void assign(sem_base<SemType>* s) noexcept
+  void assign(sem& s) noexcept
   {
     __ASSERT_NO_MSG(m_event != nullptr);
     k_poll_event_init(m_event,
       K_POLL_TYPE_SEM_AVAILABLE,
       K_POLL_MODE_NOTIFY_ONLY,
-      s->native_handle());
+      s.native_handle());
+    m_event->tag = (int)type_tag::type_sem;
+  }
+
+  ///
+  /// @brief assign a semaphore to this event
+  ///
+  /// @param s the semaphore to poll
+  ///
+  void assign(sem_ref& s) noexcept
+  {
+    __ASSERT_NO_MSG(m_event != nullptr);
+    k_poll_event_init(m_event,
+      K_POLL_TYPE_SEM_AVAILABLE,
+      K_POLL_MODE_NOTIFY_ONLY,
+      s.native_handle());
     m_event->tag = (int)type_tag::type_sem;
   }
 
@@ -84,14 +99,30 @@ public:
   ///
   /// @param f the fifo to poll
   ///
-  template<typename FifoType, typename ItemType>
-  void assign(fifo_base<FifoType, ItemType>* f) noexcept
+  template<typename T_FifoItem>
+  void assign(fifo<T_FifoItem>& f) noexcept
   {
     __ASSERT_NO_MSG(m_event != nullptr);
     k_poll_event_init(m_event,
       K_POLL_TYPE_FIFO_DATA_AVAILABLE,
       K_POLL_MODE_NOTIFY_ONLY,
-      f->native_handle());
+      f.native_handle());
+    m_event->tag = (int)type_tag::type_fifo;
+  }
+
+  ///
+  /// @brief assign a fifo to this event
+  ///
+  /// @param f the fifo to poll
+  ///
+  template<typename T_FifoItem>
+  void assign(fifo_ref<T_FifoItem>& f) noexcept
+  {
+    __ASSERT_NO_MSG(m_event != nullptr);
+    k_poll_event_init(m_event,
+      K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+      K_POLL_MODE_NOTIFY_ONLY,
+      f.native_handle());
     m_event->tag = (int)type_tag::type_fifo;
   }
 
@@ -100,16 +131,31 @@ public:
   ///
   /// @param s the signal to poll
   ///
-  template<typename SignalType>
-  void assign(poll_signal_base<SignalType>* s) noexcept
+  void assign(poll_signal& s) noexcept
   {
     __ASSERT_NO_MSG(m_event != nullptr);
     k_poll_event_init(m_event,
       K_POLL_TYPE_SIGNAL,
       K_POLL_MODE_NOTIFY_ONLY,
-      s->native_handle());
+      s.native_handle());
     m_event->tag = (int)type_tag::type_signal;
   }
+
+  ///
+  /// @brief assign a signal to this event
+  ///
+  /// @param s the signal to poll
+  ///
+  void assign(poll_signal_ref& s) noexcept
+  {
+    __ASSERT_NO_MSG(m_event != nullptr);
+    k_poll_event_init(m_event,
+      K_POLL_TYPE_SIGNAL,
+      K_POLL_MODE_NOTIFY_ONLY,
+      s.native_handle());
+    m_event->tag = (int)type_tag::type_signal;
+  }
+
 
   ///
   /// @brief check if this event is ready
@@ -170,16 +216,16 @@ public:
   /// @warning the event must be an fifo event and the fifo ItemType
   ///          must match with the registerred ItemType
   ///
-  /// @return a borrowed_fifo that points to the registered fifo
+  /// @return a fifo_ref that points to the registered fifo
   ///
-  template<typename ItemType>
+  template<typename T_FifoItemType>
   auto fifo() noexcept
   {
     __ASSERT_NO_MSG(m_event != nullptr);
     __ASSERT_NO_MSG(m_event->tag == (int)type_tag::type_fifo);
     __ASSERT_NO_MSG(m_event->fifo != nullptr);
 
-    return borrowed_fifo<ItemType>(m_event->fifo);
+    return fifo_ref<T_FifoItemType>(m_event->fifo);
   }
 
   ///
@@ -187,7 +233,7 @@ public:
   ///
   /// @warning the event must be a sem event
   ///
-  /// @return a borrowed_sem that points to the registered sem
+  /// @return a sem_ref that points to the registered sem
   ///
   auto sem() noexcept
   {
@@ -195,7 +241,7 @@ public:
     __ASSERT_NO_MSG(m_event->tag == (int)type_tag::type_sem);
     __ASSERT_NO_MSG(m_event->sem != nullptr);
 
-    return borrowed_sem(m_event->sem);
+    return sem_ref(m_event->sem);
   }
 
   ///
@@ -211,7 +257,7 @@ public:
     __ASSERT_NO_MSG(m_event->tag == (int)type_tag::type_signal);
     __ASSERT_NO_MSG(m_event->signal != nullptr);
 
-    return borrowed_poll_signal(m_event->signal);
+    return poll_signal_ref(m_event->signal);
   }
 private:
   k_poll_event* m_event{ nullptr };

@@ -22,8 +22,12 @@ namespace zpp {
 ///
 /// @param PollSignal the CRTP derived class
 ///
-template<typename PollSignal>
+template<typename T_PollSignal>
 class poll_signal_base {
+public:
+  using native_type = struct k_poll_signal;
+  using native_pointer = native_type *;
+  using native_const_pointer = native_type const *;
 protected:
   ///
   /// @brief default contructor only to be used by derived classes
@@ -81,9 +85,19 @@ public:
   ///
   /// @return pointer to a k_poll_signal
   ///
-  auto native_handle() noexcept
+  auto native_handle() noexcept -> native_pointer
   {
-    return static_cast<PollSignal*>(this)->native_handle();
+    return static_cast<T_PollSignal*>(this)->native_handle();
+  }
+
+  ///
+  /// @brief get the native k_poll_signal handle
+  ///
+  /// @return pointer to a k_poll_signal
+  ///
+  auto native_handle() const noexcept -> native_const_pointer
+  {
+    return static_cast<const T_PollSignal*>(this)->native_handle();
   }
 public:
   poll_signal_base(const poll_signal_base&) = delete;
@@ -112,12 +126,22 @@ public:
   ///
   /// @return pointer to a k_poll_signal
   ///
-  auto native_handle() noexcept
+  auto native_handle() noexcept -> native_pointer
+  {
+    return &m_signal;
+  }
+
+  ///
+  /// @brief get the native k_poll_signal handle
+  ///
+  /// @return pointer to a k_poll_signal
+  ///
+  auto native_handle() const noexcept -> native_const_pointer
   {
     return &m_signal;
   }
 private:
-  struct k_poll_signal m_signal;
+  native_type m_signal;
 public:
   poll_signal(const poll_signal&) = delete;
   poll_signal(poll_signal&&) = delete;
@@ -128,8 +152,8 @@ public:
 ///
 /// @brief class wrapping a k_poll_signal
 ///
-class borrowed_poll_signal
-  : public poll_signal_base<borrowed_poll_signal>
+class poll_signal_ref
+  : public poll_signal_base<poll_signal_ref>
 {
 public:
   ///
@@ -137,9 +161,47 @@ public:
   ///
   /// @param s the signal to wrap
   ///
-  borrowed_poll_signal(k_poll_signal* s) noexcept
+  poll_signal_ref(native_pointer s) noexcept
     : m_signal_ptr(s)
   {
+    __ASSERT_NO_MSG(m_signal_ptr != nullptr);
+  }
+
+  ///
+  /// @brief create a wrapper around a k_poll_signal
+  ///
+  /// @param s the signal to wrap
+  ///
+  template<typename T_PollSignal>
+  poll_signal_ref(T_PollSignal& s) noexcept
+    : m_signal_ptr(s.native_handle())
+  {
+    __ASSERT_NO_MSG(m_signal_ptr != nullptr);
+  }
+
+  ///
+  /// @brief create a wrapper around a k_poll_signal
+  ///
+  /// @param s the signal to wrap
+  ///
+  poll_signal_ref& operator=(native_pointer s) noexcept
+  {
+    m_signal_ptr = s;
+    __ASSERT_NO_MSG(m_signal_ptr != nullptr);
+    return *this;
+  }
+
+  ///
+  /// @brief create a wrapper around a k_poll_signal
+  ///
+  /// @param s the signal to wrap
+  ///
+  template<typename T_PollSignal>
+  poll_signal_ref& operator=(T_PollSignal& s) noexcept
+  {
+    m_signal_ptr = s.native_handle();
+    __ASSERT_NO_MSG(m_signal_ptr != nullptr);
+    return *this;
   }
 
   ///
@@ -147,18 +209,24 @@ public:
   ///
   /// @return pointer to a k_poll_signal
   ///
-  auto native_handle() noexcept
+  auto native_handle() noexcept -> native_pointer
+  {
+    return m_signal_ptr;
+  }
+
+  ///
+  /// @brief get the native k_poll_signal handle
+  ///
+  /// @return pointer to a k_poll_signal
+  ///
+  auto native_handle() const noexcept -> native_const_pointer
   {
     return m_signal_ptr;
   }
 private:
-  struct k_poll_signal* m_signal_ptr{ nullptr };
+  native_pointer m_signal_ptr{ nullptr };
 public:
-  borrowed_poll_signal() = delete;
-  borrowed_poll_signal(const borrowed_poll_signal&) = delete;
-  borrowed_poll_signal(borrowed_poll_signal&&) = delete;
-  borrowed_poll_signal& operator=(const borrowed_poll_signal&) = delete;
-  borrowed_poll_signal& operator=(borrowed_poll_signal&&) = delete;
+  poll_signal_ref() = delete;
 };
 
 } // namespace zpp
