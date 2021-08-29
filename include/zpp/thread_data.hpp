@@ -17,7 +17,7 @@ namespace zpp {
 ///
 /// @param StackSize defines the stacksize in bytes
 ///
-template <uint32_t StackSize>
+template <uint32_t T_StackSize>
 class thread_data {
 public:
   //
@@ -45,7 +45,7 @@ private:
   }
 private:
   struct k_thread m_thread_data;
-  K_THREAD_STACK_MEMBER(m_thread_stack, StackSize);
+  K_THREAD_STACK_MEMBER(m_thread_stack, T_StackSize);
 public:
   thread_data(const thread_data&) = delete;
   thread_data(thread_data&&) = delete;

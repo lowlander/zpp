@@ -20,6 +20,7 @@
 #include <functional>
 #include <chrono>
 #include <tuple>
+#include <utility>
 
 namespace zpp {
 
@@ -51,9 +52,9 @@ inline void yield() noexcept
 ///
 /// @param wait_duration The time to busy wait
 ///
-template< class Rep, class Period >
+template<class T_Rep, class T_Period>
 inline void
-busy_wait_for(const std::chrono::duration<Rep, Period>& wait_duration)
+busy_wait_for(const std::chrono::duration<T_Rep, T_Period>& wait_duration)
 {
   using namespace std::chrono;
 
@@ -66,9 +67,9 @@ busy_wait_for(const std::chrono::duration<Rep, Period>& wait_duration)
 ///
 /// @param wait_duration The time to sleep
 ///
-template< class Rep, class Period >
+template<class T_Rep, class T_Period >
 inline auto
-sleep_for(const std::chrono::duration<Rep, Period>& sleep_duration)
+sleep_for(const std::chrono::duration<T_Rep, T_Period>& sleep_duration)
 {
   auto res = k_sleep(to_timeout(sleep_duration));
 
@@ -80,14 +81,14 @@ sleep_for(const std::chrono::duration<Rep, Period>& sleep_duration)
 ///
 /// @param wait_duration The time point util the current thread will sleep
 ///
-template< class Clock, class Duration >
+template<class T_Clock, class T_Duration>
 inline void
-sleep_until( const std::chrono::time_point<Clock, Duration>& sleep_time)
+sleep_until( const std::chrono::time_point<T_Clock, T_Duration>& sleep_time)
 {
   using namespace std::chrono;
 
-  Duration dt;
-  while ( (dt = sleep_time - Clock::now()) > Duration::zero()) {
+  T_Duration dt;
+  while ( (dt = sleep_time - T_Clock::now()) > T_Duration::zero()) {
     k_sleep(to_timeout(dt));
   }
 }
@@ -140,15 +141,15 @@ template <class T> typename std::decay<T>::type decay_copy(T&& v) noexcept
 ///
 class thread {
 private:
-  template <typename CallInfo>
+  template<typename T_CallInfo>
   static void callback_helper(void* a1, void* a2, void* a3) noexcept
   {
-    CallInfo* cip = static_cast<CallInfo*>(a1);
+    T_CallInfo* cip = static_cast<T_CallInfo*>(a1);
     __ASSERT_NO_MSG(cip != nullptr);
 
     std::apply(cip->m_f, std::move(cip->m_args));
 
-    cip->~CallInfo();
+    cip->~T_CallInfo();
   }
 public:
   ///
@@ -176,15 +177,15 @@ public:
   /// @param f The thread entry point
   /// @param args The arguments to pass to @a f
   ///
-  template<typename ThreadData, typename Callback, typename... CallbackArgs>
+  template<typename T_ThreadData, typename T_Callback, typename... T_CallbackArgs>
   constexpr thread(
-      ThreadData& td,
+      T_ThreadData& td,
       const thread_attr& attr,
-      Callback&& f,
-      CallbackArgs&&... args) noexcept
+      T_Callback&& f,
+      T_CallbackArgs&&... args) noexcept
   {
-    typedef typename std::decay<Callback>::type CallInfoF;
-    typedef std::tuple<typename std::decay<CallbackArgs>::type...>
+    typedef typename std::decay<T_Callback>::type CallInfoF;
+    typedef std::tuple<typename std::decay<T_CallbackArgs>::type...>
         CallInfoArgs;
 
     struct call_info {
@@ -207,7 +208,7 @@ public:
 
     call_info* cip =
       new(call_info_ptr) call_info {
-        decay_copy(std::forward<Callback>(f)),
+        decay_copy(std::forward<T_Callback>(f)),
         decay_copy(std::forward_as_tuple(args...)) };
 
     __ASSERT_NO_MSG(cip != nullptr);
@@ -315,6 +316,20 @@ public:
     if (m_tid) {
       k_thread_resume(m_tid.native_handle());
     }
+  }
+
+  ///
+  /// @brief join the thread this object mamages.
+  ///
+  [[nodiscard]] bool join() noexcept
+  {
+    if (m_tid) {
+      if (k_thread_join(m_tid.native_handle(), K_FOREVER) == 0) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   ///

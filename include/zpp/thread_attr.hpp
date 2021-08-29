@@ -13,6 +13,7 @@
 #include <sys/__assert.h>
 
 #include <chrono>
+#include <utility>
 
 namespace zpp {
 
@@ -23,9 +24,9 @@ enum class thread_inherit_perms { yes, no };
 enum class thread_fp_regs { yes, no };
 enum class thread_sse_regs { yes, no };
 
-template<class Rep, class Period>
+template<class T_Rep, class T_Period>
 struct thread_start_delay {
-  std::chrono::duration<Rep, Period> t;
+  std::chrono::duration<T_Rep, T_Period> t;
 };
 
 ///
@@ -48,17 +49,17 @@ public:
   ///
   /// @param args The attributes to set.
   ///
-  template <class ...Type>
-  constexpr explicit thread_attr(Type... args) noexcept
+  template <class ...T_Args>
+  constexpr explicit thread_attr(T_Args&&... args) noexcept
   {
-    set(args...);
+    set(std::forward<T_Args>(args)...);
   }
 
-  template <class TypeFirst, class ...TypeRest>
-  constexpr void set(TypeFirst first, TypeRest... rest) noexcept
+  template <class T_FirstArg, class ...T_Args>
+  constexpr void set(T_FirstArg&& first, T_Args&&... rest) noexcept
   {
-    set(first);
-    set(rest...);
+    set(std::forward<T_FirstArg>(first));
+    set(std::forward<T_Args>(rest)...);
   }
 
   constexpr void set() const noexcept
@@ -80,9 +81,9 @@ public:
   ///
   /// @param delay The thread start delay
   ///
-  template<class Rep, class Period>
+  template<class T_Rep, class T_Period>
   constexpr void
-  set(const thread_start_delay<Rep, Period>& delay) noexcept
+  set(const thread_start_delay<T_Rep, T_Period>& delay) noexcept
   {
     using namespace std::chrono;
 
@@ -215,9 +216,9 @@ public:
     return m_options;
   }
 private:
-  thread_prio		m_prio{ };
-  uint32_t			m_options{ 0 };
-  k_timeout_t			m_delay{ K_NO_WAIT };
+  thread_prio m_prio{ };
+  uint32_t    m_options{ 0 };
+  k_timeout_t m_delay{ K_NO_WAIT };
 };
 
 } // namespace zpp
