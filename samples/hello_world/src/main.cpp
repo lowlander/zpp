@@ -4,9 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#include <zpp/thread.hpp>
-#include <zpp/fmt.hpp>
-#include <zpp/mutex.hpp>
+#include <zpp.hpp>
 
 #include <chrono>
 
