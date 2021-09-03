@@ -1,0 +1,10 @@
+tests:
+  zpp.sample.kernel.cond_var.simple:
+    arch_exclude: posix
+    platform_exclude: qemu_x86_coverage
+    tags: zpp kernel condition_variables
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - ".*done == 20 so everyone is done"
