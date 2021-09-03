@@ -15,6 +15,8 @@
 #endif
 #endif
 
+#include <zpp/error_code.hpp>
+#include <zpp/result.hpp>
 #include <zpp/atomic_bitset.hpp>
 #include <zpp/atomic_var.hpp>
 #include <zpp/clock.hpp>
