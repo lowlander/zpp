@@ -68,22 +68,22 @@ void test_mutex()
 {
   auto rc = m.lock();
 
-  zassert_true(rc, "Failed to lock mutex\n");
+  zassert_true(!!rc, "Failed to lock mutex: %d\n", rc.error());
 
   rc = m.unlock();
 
-  zassert_true(rc, "Failed to unlock mutex\n");
+  zassert_true(!!rc, "Failed to unlock mutex: %d\n", rc.error());
 }
 
 void test_mutex_ref()
 {
   auto rc = m_ref.lock();
 
-  zassert_true(rc, "Failed to lock mutex_ref\n");
+  zassert_true(!!rc, "Failed to lock mutex_ref: %d\n", rc.error());
 
   rc = m_ref.unlock();
 
-  zassert_true(rc, "Failed to unlock mutex_ref\n");
+  zassert_true(!!rc, "Failed to unlock mutex_ref: %d\n", rc.error());
 }
 
 void test_lock_guard()

@@ -45,7 +45,7 @@ static void test_thread_creation(void)
   done--;
 
   auto  rc = t.join();
-  zassert_true(rc, "join failed");
+  zassert_true(rc == true, "join failed");
 
   print("Hello from main tid={}\n", this_thread::get_id());
 }
@@ -105,7 +105,7 @@ static void test_thread_creation_params(void)
   done--;
 
   auto rc = t.join();
-  zassert_true(rc, "join failed");
+  zassert_true(rc == true, "join failed");
 
   print("Hello from main tid={}\n", this_thread::get_id());
 }
