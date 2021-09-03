@@ -178,7 +178,14 @@ public:
 /// @brief A memory slab class.
 ///
 template<uint32_t T_BlockSize, uint32_t T_BlockCount, uint32_t T_Align=sizeof(void*)>
-class mem_slab : public mem_slab_base<mem_slab<T_BlockSize, T_BlockCount, T_Align>> {
+class mem_slab : public mem_slab_base<mem_slab<T_BlockSize, T_BlockCount, T_Align>>
+{
+  static_assert(T_BlockCount > 0);
+  static_assert(is_multiple_of(T_BlockSize, 4) == true);
+  static_assert(T_Align >= sizeof(void*));
+  static_assert(is_power_of_two(T_Align));
+  static_assert(T_BlockSize >= T_Align);
+  static_assert((T_BlockSize % T_Align) == 0);
 public:
   using typename mem_slab_base<mem_slab<T_BlockSize, T_BlockCount, T_Align>>::native_type;
   using typename mem_slab_base<mem_slab<T_BlockSize, T_BlockCount, T_Align>>::native_pointer;
@@ -189,13 +196,6 @@ public:
   ///
   mem_slab() noexcept
   {
-    static_assert(T_BlockCount > 0);
-    static_assert(is_multiple_of(T_BlockSize, 4) == true);
-    static_assert(T_Align >= sizeof(void*));
-    static_assert(is_power_of_two(T_Align));
-    static_assert(T_BlockSize >= T_Align);
-    static_assert((T_BlockSize % T_Align) == 0);
-
     k_mem_slab_init(&m_mem_slab, m_mem_buffer.data(), T_BlockSize, T_BlockCount);
   }
 

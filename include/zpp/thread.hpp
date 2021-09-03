@@ -12,6 +12,8 @@
 #include <zpp/thread_attr.hpp>
 #include <zpp/thread_data.hpp>
 #include <zpp/clock.hpp>
+#include <zpp/result.hpp>
+#include <zpp/error_code.hpp>
 
 #include <kernel.h>
 #include <sys/__assert.h>
@@ -280,66 +282,96 @@ public:
   ///
   /// @brief wakeup the thread this object mamages.
   ///
-  void wakeup() noexcept
+  [[nodiscard]] auto wakeup() noexcept
   {
+    result<void, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
       k_wakeup(m_tid.native_handle());
+      res.assign_value();
     }
+
+    return res;
   }
 
   ///
   /// @brief start the thread this object mamages.
   ///
-  void start() noexcept
+  [[nodiscard]] auto start() noexcept
   {
+    result<void, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
       k_thread_start(m_tid.native_handle());
+      res.assign_value();
     }
+
+    return res;
   }
 
   ///
   /// @brief abort the thread this object mamages.
   ///
-  void abort() noexcept
+  [[nodiscard]] auto abort() noexcept
   {
+    result<void, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
       k_thread_abort(m_tid.native_handle());
       m_tid = thread_id::any();
+      res.assign_value();
     }
+
+    return res;
   }
 
   ///
   /// @brief resume the thread this object mamages.
   ///
-  void resume() noexcept
+  [[nodiscard]] auto resume() noexcept
   {
+    result<void, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
       k_thread_resume(m_tid.native_handle());
+      res.assign_value();
     }
+
+    return res;
   }
 
   ///
   /// @brief join the thread this object mamages.
   ///
-  [[nodiscard]] bool join() noexcept
+  [[nodiscard]] auto join() noexcept
   {
+    result<void, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
-      if (k_thread_join(m_tid.native_handle(), K_FOREVER) == 0) {
-        return true;
+      auto rc = k_thread_join(m_tid.native_handle(), K_FOREVER);
+      if (rc == 0) {
+        res.assign_value();
+      } else {
+        res.assign_error(to_error_code(-rc));
       }
     }
 
-    return false;
+    return res;
   }
 
   ///
   /// @brief suspend the thread this object mamages.
   ///
-  void suspend() noexcept
+  [[nodiscard]] auto suspend() noexcept
   {
+    result<void, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
       k_thread_suspend(m_tid.native_handle());
+      res.assign_value();
     }
+
+    return res;
   }
 
   ///
@@ -347,14 +379,15 @@ public:
   ///
   /// @return Thread priority
   ///
-  thread_prio priority() noexcept
+  [[nodiscard]] auto priority() noexcept
   {
+    result<thread_prio, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
-      return thread_prio(
-        k_thread_priority_get(m_tid.native_handle()) );
-    } else {
-      return {};
+      res = thread_prio( k_thread_priority_get(m_tid.native_handle()) );
     }
+
+    return res;
   }
 
   ///
@@ -362,12 +395,16 @@ public:
   ///
   /// @param prio The new thread priority
   ///
-  void set_priority(thread_prio prio) const noexcept
+  [[nodiscard]] auto set_priority(thread_prio prio) const noexcept
   {
+    result<void, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
-      k_thread_priority_set(m_tid.native_handle(),
-            prio.native_value());
+      k_thread_priority_set(m_tid.native_handle(), prio.native_value());
+      res.assign_value();
     }
+
+    return res;
   }
 
   ///
@@ -375,18 +412,20 @@ public:
   ///
   /// @param name The new thread name
   ///
-  bool set_name(const char* name) noexcept
+  [[nodiscard]] auto set_name(const char* name) noexcept
   {
+    result<void, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
-      int rc = k_thread_name_set(m_tid.native_handle(), name);
+      auto rc = k_thread_name_set(m_tid.native_handle(), name);
       if (rc == 0) {
-        return true;
+        res.assign_value();
       } else {
-        return false;
+        res.assign_error(to_error_code(-rc));
       }
-    } else {
-      return false;
     }
+
+    return res;
   }
 
   ///
@@ -394,13 +433,20 @@ public:
   ///
   /// @return The thread name or nullptr
   ///
-  const char* name() const noexcept
+  [[nodiscard]] auto name() const noexcept
   {
+    result<const char*, error_code> res(error_result(error_code::k_inval));
+
     if (m_tid) {
-      return k_thread_name_get(m_tid.native_handle());
-    } else {
-      return nullptr;
+      auto rc = k_thread_name_get(m_tid.native_handle());
+      if (rc == nullptr) {
+        res.assign_error(error_code::k_notsup); // TODO
+      } else {
+        res.assign_value(rc);
+      }
     }
+
+    return res;
   }
 private:
   thread_id	m_tid;

@@ -14,6 +14,8 @@
 
 #include <zpp/mutex.hpp>
 #include <zpp/utils.hpp>
+#include <zpp/result.hpp>
+#include <zpp/error_code.hpp>
 
 namespace zpp {
 
@@ -39,13 +41,18 @@ public:
   ///
   /// @return true if successfull.
   ///
-  [[nodiscard]] bool notify_one() noexcept
+  [[nodiscard]] auto notify_one() noexcept
   {
-    if (k_condvar_signal(native_handle()) == 0) {
-      return true;
+    result<void, error_code> res;
+
+    auto rc = k_condvar_signal(native_handle());
+    if (rc == 0) {
+      res.assign_value();
     } else {
-      return false;
+      res.assign_error(to_error_code(-rc));
     }
+
+    return res;
   }
 
   ///
@@ -53,13 +60,18 @@ public:
   ///
   /// @return true if successfull.
   ///
-  [[nodiscard]] bool notify_all() noexcept
+  [[nodiscard]] auto notify_all() noexcept
   {
-    if (k_condvar_broadcast(native_handle()) == 0) {
-      return true;
+    result<void, error_code> res;
+
+    auto rc = k_condvar_broadcast(native_handle());
+    if (rc == 0) {
+      res.assign_value();
     } else {
-      return false;
+      res.assign_error(to_error_code(-rc));
     }
+
+    return res;
   }
 
   ///
@@ -70,18 +82,23 @@ public:
   /// @return true if successfull.
   ///
   template<class T_Mutex>
-  [[nodiscard]] bool wait(T_Mutex& m) noexcept
+  [[nodiscard]] auto wait(T_Mutex& m) noexcept
   {
+    result<void, error_code> res;
+
     auto h = m.native_handle();
     if (h == nullptr) {
-      return false;
+      res.assign_error(error_code::k_inval);
+    } else {
+      auto rc = k_condvar_wait(native_handle(), h, K_FOREVER);
+      if (rc == 0) {
+        res.assign_value();
+      } else {
+        res.assign_error(to_error_code(-rc));
+      }
     }
 
-    if (k_condvar_wait(native_handle(), h, K_FOREVER) == 0) {
-      return true;
-    } else {
-      return false;
-    }
+    return res;
   }
 
   ///
@@ -93,22 +110,26 @@ public:
   /// @return true if successfull.
   ///
   template <class T_Mutex, class T_Rep, class T_Period>
-  [[nodiscard]] bool
+  [[nodiscard]] auto
   try_wait_for(T_Mutex& m, const std::chrono::duration<T_Rep, T_Period>& timeout) noexcept
   {
     using namespace std::chrono;
 
+    result<void, error_code> res;
+
     auto h = m.native_handle();
     if (h == nullptr) {
-      return false;
+      res.assign_error(error_code::k_inval);
+    } else {
+      auto rc = k_condvar_wait(native_handle(), h, to_timeout(timeout));
+      if (rc == 0) {
+        res.assign_value();
+      } else {
+        res.assign_error(to_error_code(-rc));
+      }
     }
 
-    if (k_condvar_wait(native_handle(), h, to_timeout(timeout)) == 0)
-    {
-      return true;
-    } else {
-      return false;
-    }
+    return res;
   }
 
 
@@ -121,20 +142,26 @@ public:
   /// @return true if successfull.
   ///
   template<class T_Mutex, class T_Predecate>
-  [[nodiscard]] bool wait(T_Mutex& m, T_Predecate pred) noexcept
+  [[nodiscard]] auto wait(T_Mutex& m, T_Predecate pred) noexcept
   {
+    result<void, error_code> res;
+
     auto h = m.native_handle();
     if (h == nullptr) {
-      return false;
-    }
-
-    while (pred() == false) {
-      if (k_condvar_wait(native_handle(), h, K_FOREVER) != 0) {
-        return false;
+      res.assign_error(error_code::k_inval);
+    } else {
+      while (pred() == false) {
+        auto rc = k_condvar_wait(native_handle(), h, K_FOREVER);
+        if (rc != 0) {
+          res.assign_error(to_error_code(-rc));
+          return res;
+        }
       }
+
+      res.assign_value();
     }
 
-    return true;
+    return res;
   }
 
   ///
@@ -147,26 +174,31 @@ public:
   /// @return true if successfull.
   ///
   template <class T_Mutex, class T_Rep, class T_Period, class T_Predecate>
-  [[nodiscard]] bool
+  [[nodiscard]] auto
   try_wait_for(T_Mutex& m, const std::chrono::duration<T_Rep, T_Period>& timeout, T_Predecate pred) noexcept
   {
     using namespace std::chrono;
 
+    result<void, error_code> res;
+
     auto h = m.native_handle();
     if (h == nullptr) {
-      return false;
-    }
+      res.assign_error(error_code::k_inval);
+    } else {
+      while(pred() == false) {
+        auto rc = k_condvar_wait(native_handle(), h, to_timeout(timeout));
+        if (rc != 0) {
+          res.assign_error(to_error_code(-rc));
+          return res;
+        }
 
-    while(pred() == false) {
-      if (k_condvar_wait(native_handle(), h, to_timeout(timeout)) != 0)
-      {
-        return false;
+        // TODO update timeout
       }
 
-      // TODO update timeout
+      res.assign_value();
     }
 
-    return pred();
+    return res;
   }
 
   ///

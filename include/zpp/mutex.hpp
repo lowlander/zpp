@@ -12,6 +12,9 @@
 
 #include <chrono>
 
+#include <zpp/result.hpp>
+#include <zpp/error_code.hpp>
+
 namespace zpp {
 
 ///
@@ -38,13 +41,18 @@ public:
   ///
   /// @return true if successfully locked.
   ///
-  [[nodiscard]] bool lock() noexcept
+  [[nodiscard]] auto lock() noexcept
   {
-    if (k_mutex_lock(native_handle(), K_FOREVER) == 0) {
-      return true;
+    result<void, error_code> res;
+
+    auto rc = k_mutex_lock(native_handle(), K_FOREVER);
+    if (rc == 0) {
+      res.assign_value();
     } else {
-      return false;
+      res.assign_error(to_error_code(-rc));
     }
+
+    return res;
   }
 
   ///
@@ -52,13 +60,18 @@ public:
   ///
   /// @return true if successfully locked.
   ///
-  [[nodiscard]] bool try_lock() noexcept
+  [[nodiscard]] auto try_lock() noexcept
   {
-    if (k_mutex_lock(native_handle(), K_NO_WAIT) == 0) {
-      return true;
+    result<void, error_code> res;
+
+    auto rc = k_mutex_lock(native_handle(), K_NO_WAIT);
+    if (rc == 0) {
+      res.assign_value();
     } else {
-      return false;
+      res.assign_error(to_error_code(-rc));
     }
+
+    return res;
   }
 
   ///
@@ -69,17 +82,21 @@ public:
   /// @return true if successfully locked.
   ///
   template<class T_Rep, class T_Period>
-  [[nodiscard]] bool
+  [[nodiscard]] auto
   try_lock_for(const std::chrono::duration<T_Rep, T_Period>& timeout) noexcept
   {
     using namespace std::chrono;
 
-    if (k_mutex_lock(native_handle(), to_timeout(timeout)) == 0)
-    {
-      return true;
+    result<void, error_code> res;
+
+    auto rc = k_mutex_lock(native_handle(), to_timeout(timeout));
+    if (rc == 0) {
+      res.assign_value();
     } else {
-      return false;
+      res.assign_error(to_error_code(-rc));
     }
+
+    return res;
   }
 
   ///
@@ -87,13 +104,18 @@ public:
   ///
   /// @return true on success
   ///
-  [[nodiscard]] bool unlock() noexcept
+  [[nodiscard]] auto unlock() noexcept
   {
-    if (k_mutex_unlock(native_handle()) == 0) {
-      return true;
+    result<void, error_code> res;
+
+    auto rc = k_mutex_unlock(native_handle());
+    if (rc == 0) {
+      res.assign_value();
     } else {
-      return false;
+      res.assign_error(to_error_code(-rc));
     }
+
+    return res;
   }
 
   ///

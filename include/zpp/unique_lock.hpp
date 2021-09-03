@@ -12,6 +12,9 @@
 
 #include <chrono>
 
+#include <zpp/result.hpp>
+#include <zpp/error_code.hpp>
+
 namespace zpp {
 
 ///
@@ -86,16 +89,20 @@ public:
   ///
   /// @return true if successfully locked.
   ///
-  [[nodiscard]] bool lock() noexcept
+  [[nodiscard]] auto lock() noexcept
   {
+    result<void, error_code> res;
+
     if (m_lock == nullptr) {
-      return false;
+      res.assign_error(error_code::k_inval);
     } else if (m_is_owner == true) {
-      return false;
+      res.assign_error(error_code::k_deadlk);
     } else {
-      m_is_owner = m_lock->lock();
-      return m_is_owner;
+      res = m_lock->lock();
+      m_is_owner = (bool)res;
     }
+
+    return res;
   }
 
   ///
@@ -103,16 +110,20 @@ public:
   ///
   /// @return true if successfully locked.
   ///
-  [[nodiscard]] bool try_lock() noexcept
+  [[nodiscard]] auto try_lock() noexcept
   {
+    result<void, error_code> res;
+
     if (m_lock == nullptr) {
-      return false;
+      res.assign_error(error_code::k_inval);
     } else if (m_is_owner == true) {
-      return false;
+      res.assign_error(error_code::k_deadlk);
     } else {
-      m_is_owner = m_lock->try_lock();
-      return m_is_owner;
+      res = m_lock->try_lock();
+      m_is_owner = (bool)res;
     }
+
+    return res;
   }
 
   ///
@@ -123,34 +134,40 @@ public:
   /// @return true if successfully locked.
   ///
   template<class T_Rep, class T_Period>
-  [[nodiscard]] bool
+  [[nodiscard]] auto
   try_lock_for(const std::chrono::duration<T_Rep, T_Period>& timeout) noexcept
   {
+    result<void, error_code> res;
+
     if (m_lock == nullptr) {
-      return false;
+      res.assign_error(error_code::k_inval);
     } else if (m_is_owner == true) {
-      return false;
+      res.assign_error(error_code::k_deadlk);
     } else {
-      m_is_owner = m_lock->try_lock_for(timeout);
-      return m_is_owner;
+      res = m_lock->try_lock_for(timeout);
+      m_is_owner = (bool)res;
     }
+
+    return res;
   }
 
   ///
   /// @brief Unlock the mutex.
   ///
-  [[nodiscard]] bool unlock() noexcept
+  [[nodiscard]] auto unlock() noexcept
   {
+    result<void, error_code> res;
+
     if (m_is_owner == false) {
-      return false;
+      res.assign_error(error_code::k_perm);
+    } else if (m_lock == nullptr) {
+      res.assign_error(error_code::k_inval);
     } else {
-      if (m_lock != nullptr) {
-        auto rc = m_lock->unlock();
-        m_is_owner = false;
-        return rc;
-      }
+      res = m_lock->unlock();
+      m_is_owner = false;
     }
-    return true;
+
+    return res;
   }
 
   ///
