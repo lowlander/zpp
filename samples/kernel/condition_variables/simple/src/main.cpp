@@ -19,12 +19,14 @@ namespace {
 zpp::mutex                m;
 zpp::condition_variable   cv;
 
-zpp::thread_data<STACK_SIZE> tcb[NUM_THREADS];
+
+ZPP_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREADS, STACK_SIZE);
+zpp::thread_data tcb[NUM_THREADS];
 zpp::thread t[NUM_THREADS];
 
 int done{};
 
-void worker_thread(int myid)
+void worker_thread(int myid) noexcept
 {
   const int workloops = 5;
 
@@ -45,12 +47,13 @@ void worker_thread(int myid)
   done++;
   printk("[thread %d] done is now %d. Signalling cond.\n", myid, done);
 
-  cv.notify_one();
+  auto res = cv.notify_one();
+  __ASSERT_NO_MSG(res == true);
 }
 
 } // anonimouse namespace
 
-void main(void)
+int main(void)
 {
   const zpp::thread_attr attrs(
         zpp::thread_prio::preempt(10),
@@ -59,12 +62,15 @@ void main(void)
       );
 
   for (int i = 0; i < NUM_THREADS; i++) {
-    t[i] = zpp::thread(tcb[0], attrs, worker_thread, i);
+    t[i] = zpp::thread(tcb[i], tstack(i), attrs, &worker_thread, i);
   }
 
-  zpp::this_thread::sleep_for(std::chrono::seconds(1));
+  //zpp::this_thread::sleep_for(std::chrono::seconds(1));
 
-  zpp::unique_lock lk(m);
+  printk("[thread %s] all threads started\n", __func__);
+
+  {
+    zpp::lock_guard lg(m);
 
   //
   // are the other threads still busy?
@@ -76,13 +82,23 @@ void main(void)
     // block this thread until another thread signals cond. While
     // blocked, the mutex is released, then re-acquired before this
     // thread is woken up and the call returns.
-    cv.wait(m);
+    auto res = cv.wait(m);
+    __ASSERT_NO_MSG(res == true);
 
     printk("[thread %s] wake - cond was signalled.\n", __func__);
 
     // we go around the loop with the lock held
   }
 
+  } // zpp::lock_guard scope
+
+  for (int i = 0; i < NUM_THREADS; i++) {
+    auto res = t[i].join();
+    __ASSERT_NO_MSG(res == true);
+  }
+
   printk("[thread %s] done == %d so everyone is done\n",
     __func__, (int)NUM_THREADS);
+
+  return 0;
 }

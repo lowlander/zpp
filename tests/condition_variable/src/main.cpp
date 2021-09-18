@@ -15,7 +15,9 @@
 
 namespace {
 
-zpp::thread_data<1024> tcb;
+ZPP_THREAD_STACK_DEFINE(tstack, 1024);
+zpp::thread_data tcb;
+
 
 bool ready = false;
 bool processed = false;
@@ -70,35 +72,33 @@ void test_condition_variable()
       );
 
   auto t = thread(
-    tcb, attr,
-    []() {
+    tcb, tstack(), attr,
+    []() noexcept {
       // Wait until main() sends data
-      zpp::unique_lock<zpp::mutex> lk(m);
+      {
+        zpp::lock_guard<zpp::mutex> lg(m);
 
-      auto rc = cv.wait(lk, []{return ready;});
-      __ASSERT_NO_MSG(rc == true);
+        auto rc = cv.wait(m, []{return ready;});
+        __ASSERT_NO_MSG(rc == true);
 
-      // after the wait, we own the lock.
-      print("Worker thread is processing data\n");
+        // after the wait, we own the lock.
+        print("Worker thread is processing data\n");
 
-      strcat(data, " after processing");
+        strcat(data, " after processing");
 
-      // Send data back to main()
-      processed = true;
-      print("Worker thread signals data processing completed\n");
+        // Send data back to main()
+        processed = true;
+        print("Worker thread signals data processing completed\n");
+      }
 
-      // Manual unlocking is done before notifying, to avoid waking up
-      // the waiting thread only to block again (see notify_one for details)
-      rc = lk.unlock();
-      __ASSERT_NO_MSG(rc == true);
-      rc = cv.notify_one();
+      auto rc = cv.notify_one();
       __ASSERT_NO_MSG(rc == true);
     });
 
     strcpy(data, "Example data");
     // send data to the worker thread
     {
-      zpp::lock_guard<zpp::mutex> lk(m);
+      zpp::lock_guard<zpp::mutex> lg(m);
       ready = true;
       print("main() signals data ready for processing\n");
     }
@@ -107,8 +107,8 @@ void test_condition_variable()
 
     // wait for the worker
     {
-      zpp::unique_lock<zpp::mutex> lk(m);
-      rc = cv.wait(lk, []{return processed;});
+      zpp::lock_guard<zpp::mutex> lg(m);
+      rc = cv.wait(m, []{return processed;});
       __ASSERT_NO_MSG(rc == true);
     }
     print("Back in main(), data = {}\n", data);

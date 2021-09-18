@@ -14,7 +14,10 @@
 
 namespace {
 
-zpp::thread_data<1024> tcb;
+ZPP_THREAD_STACK_DEFINE(tstack, 1024);
+zpp::thread_data tcb;
+
+zpp::heap<1024> theap;
 
 } // namespace
 
@@ -30,13 +33,19 @@ static void test_thread_creation(void)
         thread_suspend::no
       );
 
+  int dummy=42;
   sem done;
 
   auto t = thread(
-    tcb, attr,
-    [&done]() {
+    tcb, tstack(), attr, &theap,
+    [&dummy, &done]() noexcept {
       print("Hello from thread tid={}\n",
             this_thread::get_id());
+
+      print("dummy = {}\n", (void*)&dummy);
+      print("done = {}\n", (void*)&done);
+
+      zassert_true(dummy == 42, "dummy not 42\n");
 
       done++;
     });
@@ -49,6 +58,87 @@ static void test_thread_creation(void)
 
   print("Hello from main tid={}\n", this_thread::get_id());
 }
+
+static void test_thread_creation_void(void)
+{
+  using namespace zpp;
+  using namespace std::chrono;
+
+  const thread_attr attr(
+        thread_prio::preempt(0),
+        thread_inherit_perms::no,
+        thread_essential::no,
+        thread_suspend::no
+      );
+
+  auto t = thread(
+    tcb, tstack(), attr,
+    []() noexcept {
+      print("Hello from thread tid={}\n",
+            this_thread::get_id());
+    });
+
+  auto rc = t.join();
+  zassert_true(rc == true, "join failed");
+
+  print("Hello from main tid={}\n", this_thread::get_id());
+}
+
+static void test_thread_creation_pointer(void)
+{
+  using namespace zpp;
+  using namespace std::chrono;
+
+  const thread_attr attr(
+        thread_prio::preempt(0),
+        thread_inherit_perms::no,
+        thread_essential::no,
+        thread_suspend::no
+      );
+
+  struct S {
+    S() noexcept {
+      print("S() {} {} {}",
+        (void*)this, a, b);
+    }
+
+    S(const S& other) noexcept : a(other.a), b(other.b)  {
+      print("S(&{} {} {}) {} {} {}",
+        (void*)&other, other.a, other.b,
+        (void*)this, a, b);
+    }
+    ~S() noexcept {
+      print("~S() {} {} {}",
+        (void*)this, a, b);
+    }
+
+    int a{};
+    int b{};
+  };
+
+  S s;
+
+  auto t = thread(
+    tcb, tstack(), attr,
+    [](S* s) noexcept {
+      print("Hello from thread tid={} s->a={} s->b={}\n",
+            this_thread::get_id(),
+            s->a, s->b);
+
+      s->a = 21;
+      s->b = 43;
+
+    }, &s);
+
+  auto rc = t.join();
+  zassert_true(rc == true, "join failed");
+
+  zassert_true(s.a == 21, "s.a != 21\n");
+  zassert_true(s.b == 43, "s.a != 43\n");
+
+  print("Hello from main tid={}\n", this_thread::get_id());
+}
+
 
 static void test_thread_creation_params(void)
 {
@@ -63,17 +153,17 @@ static void test_thread_creation_params(void)
       );
 
   struct S {
-    S() {
+    S() noexcept {
       print("S() {} {} {}",
         (void*)this, a, b);
     }
 
-    S(const S& other) : a(other.a), b(other.b) {
+    S(const S& other) noexcept : a(other.a), b(other.b)  {
       print("S(&{} {} {}) {} {} {}",
         (void*)&other, other.a, other.b,
         (void*)this, a, b);
     }
-    ~S() {
+    ~S() noexcept {
       print("~S() {} {} {}",
         (void*)this, a, b);
     }
@@ -89,8 +179,8 @@ static void test_thread_creation_params(void)
   int b = 34;
 
   auto t = thread(
-    tcb, attr,
-    [&done](S s, int a, int b) {
+    tcb, tstack(), attr, &theap,
+    [&done](S s, int a, int b) noexcept {
       print("Hello from thread tid={} s.a={} s.b={} a={} b={}\n",
             this_thread::get_id(),
             s.a, s.b, a, b);
@@ -114,6 +204,8 @@ void test_main(void)
 {
   ztest_test_suite(zpp_thread_tests,
       ztest_unit_test(test_thread_creation),
+      ztest_unit_test(test_thread_creation_void),
+      ztest_unit_test(test_thread_creation_pointer),
       ztest_unit_test(test_thread_creation_params)
     );
 

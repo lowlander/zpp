@@ -254,7 +254,7 @@ operator+(thread_prio lhs, int rhs) noexcept
 ///
 /// @param prio The priority to print
 ///
-inline void print_arg(thread_prio prio)
+inline void print_arg(thread_prio prio) noexcept
 {
   printk("%d", prio.native_value());
 }

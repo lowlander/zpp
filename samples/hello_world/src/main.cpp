@@ -16,7 +16,10 @@ namespace {
 //
 // Define the Thread Control Block for the thread, using a stack of 1024 bytes
 //
-zpp::thread_data<1024> my_thread_tcb;
+ZPP_THREAD_STACK_DEFINE(my_thread_tstack, 1024);
+zpp::thread_data my_thread_tcb;
+
+zpp::heap<128> my_heap;
 
 } // namespace
 
@@ -49,8 +52,8 @@ int main(int argc, char *argv[])
   const char* string_arg = "Hello World from thread tid={}\n";
 
   auto my_thread = thread(
-    my_thread_tcb, my_thread_attr,
-    [&print_lock](const char* t)
+    my_thread_tcb, my_thread_tstack(), my_thread_attr, &my_heap,
+    [&print_lock](const char* t) noexcept
     {
       while (true) {
         //

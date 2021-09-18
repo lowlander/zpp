@@ -16,7 +16,9 @@
 
 namespace {
 
-zpp::thread_data<1024> tcb;
+ZPP_THREAD_STACK_DEFINE(tstack, 1024);
+zpp::thread_data tcb;
+
 
 struct item {
   void* fifo_reserved{};
@@ -40,8 +42,6 @@ void test_fifo()
         thread_suspend::no
       );
 
-  sem end_sema(0, 1);
-
   //
   // Put items into fifo
   //
@@ -52,8 +52,8 @@ void test_fifo()
   }
 
   auto t = thread(
-    tcb, attr,
-    [&end_sema]() {
+    tcb, tstack(), attr,
+    []() noexcept {
       //
       // Get items from fifo
       //
@@ -70,14 +70,13 @@ void test_fifo()
       for (auto& item: g_item_array) {
         g_fifo.push_back(&item);
       }
-
-      end_sema++;
     });
 
   //
   // Let the child thread run
   //
-  end_sema--;
+  auto res = t.join();
+  zassert_equal(!!res, true, "");
 
   //
   // Get items from fifo

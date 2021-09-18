@@ -18,7 +18,9 @@ namespace {
 #define SIGNAL_RESULT 0x1ee7d00d
 #define FIFO_MSG_VALUE 0xdeadbeef
 
-zpp::thread_data<1024> test_thread;
+ZPP_THREAD_STACK_DEFINE(test_thread_stack, 1024);
+zpp::thread_data test_thread;
+
 
 struct fifo_msg {
   void* fifo_reserved{};
@@ -58,7 +60,7 @@ void test_poll_wait()
       zpp::thread_essential::no,
       zpp::thread_suspend::no );
 
-  auto poll_helper = [](bool do_fifo) {
+  auto poll_helper = [](bool do_fifo) noexcept {
       zpp::this_thread::sleep_for(250ms);
 
       wait_sem++;
@@ -70,7 +72,7 @@ void test_poll_wait()
       wait_signal.raise(SIGNAL_RESULT);
   };
 
-  auto t = zpp::thread(test_thread, attr, poll_helper, true);
+  auto t = zpp::thread(test_thread, test_thread_stack(), attr, poll_helper, true);
 
   auto rc = wait_events.try_poll_for(1s);
 
@@ -115,7 +117,7 @@ void test_poll_wait()
   zpp::this_thread::set_priority(main_low_prio);
 
   attr.set(old_prio + 1);
-  t = zpp::thread(test_thread, attr, poll_helper, false);
+  t = zpp::thread(test_thread, test_thread_stack(), attr, poll_helper, false);
 
   rc = wait_events.try_poll_for(1s);
 
@@ -147,7 +149,7 @@ void test_poll_wait()
   wait_signal.reset();
 
   attr.set(old_prio - 1);
-  t = zpp::thread(test_thread, attr, poll_helper, true);
+  t = zpp::thread(test_thread, test_thread_stack(), attr, poll_helper, true);
 
   //
   // semaphore

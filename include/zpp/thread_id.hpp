@@ -106,7 +106,7 @@ operator!=(const thread_id& lhs, const thread_id& rhs) noexcept
 /// @param id The ID to print
 ///
 inline void
-print_arg(thread_id id)
+print_arg(thread_id id) noexcept
 {
   printk("%p", id.native_handle());
 }

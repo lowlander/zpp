@@ -11,9 +11,11 @@
 #include <zpp/thread_id.hpp>
 #include <zpp/thread_attr.hpp>
 #include <zpp/thread_data.hpp>
+#include <zpp/thread_stack.hpp>
 #include <zpp/clock.hpp>
 #include <zpp/result.hpp>
 #include <zpp/error_code.hpp>
+#include <zpp/heap.hpp>
 
 #include <kernel.h>
 #include <sys/__assert.h>
@@ -23,6 +25,7 @@
 #include <chrono>
 #include <tuple>
 #include <utility>
+#include <memory>
 
 namespace zpp {
 
@@ -139,20 +142,56 @@ template <class T> typename std::decay<T>::type decay_copy(T&& v) noexcept
 }
 
 ///
-/// @brief The class thread repesents a single Zephyr thread.
+/// @brief The class thread repecents a single Zephyr thread.
 ///
 class thread {
 private:
   template<typename T_CallInfo>
   static void callback_helper(void* a1, void* a2, void* a3) noexcept
   {
-    T_CallInfo* cip = static_cast<T_CallInfo*>(a1);
+    (void)a2;
+    (void)a3;
+
+    auto cip = reinterpret_cast<T_CallInfo*>(a1);
     __ASSERT_NO_MSG(cip != nullptr);
 
-    std::apply(cip->m_f, std::move(cip->m_args));
+    auto f = std::move(cip->m_f);
+    auto args = std::move(cip->m_args);
 
-    cip->~T_CallInfo();
+    auto heap = cip->m_heap;
+
+    std::destroy_at(cip);
+    heap->deallocate(cip);
+
+    std::apply(f, std::move(args));
   }
+
+  template<typename T_Callback, typename T_CallbackArg>
+  static void callback_helper(void* a1, void* a2, void* a3) noexcept
+  {
+    (void)a3;
+
+    auto f = reinterpret_cast<T_Callback>(a1);
+    __ASSERT_NO_MSG(f != nullptr);
+
+    auto arg = reinterpret_cast<T_CallbackArg*>(&a2);
+    __ASSERT_NO_MSG(arg != nullptr);
+
+    std::invoke(*f, *arg);
+  }
+
+  template<typename T_Callback>
+  static void callback_helper_void(void* a1, void* a2, void* a3) noexcept
+  {
+    (void)a2;
+    (void)a3;
+
+    auto f = reinterpret_cast<T_Callback>(a1);
+    __ASSERT_NO_MSG(f != nullptr);
+
+    std::invoke(*f);
+  }
+
 public:
   ///
   /// @brief Creates a object which doesn't represent a Zephyr thread.
@@ -179,52 +218,150 @@ public:
   /// @param f The thread entry point
   /// @param args The arguments to pass to @a f
   ///
-  template<typename T_ThreadData, typename T_Callback, typename... T_CallbackArgs>
+  template<typename T_Heap, typename T_Callback, typename... T_CallbackArgs,
+            std::enable_if_t<std::is_nothrow_invocable_v<T_Callback, T_CallbackArgs...>, bool> = true
+          >
   constexpr thread(
-      T_ThreadData& td,
+      thread_data& td,
+      thread_stack&& tstack,
       const thread_attr& attr,
+      T_Heap* heap,
       T_Callback&& f,
       T_CallbackArgs&&... args) noexcept
   {
+    typedef typename std::decay<T_Heap>::type CallInfoHeap;
     typedef typename std::decay<T_Callback>::type CallInfoF;
-    typedef std::tuple<typename std::decay<T_CallbackArgs>::type...>
-        CallInfoArgs;
+    typedef std::tuple<typename std::decay<T_CallbackArgs>::type...> CallInfoArgs;
+
+    static_assert(std::is_invocable_v<T_Callback, T_CallbackArgs...>);
+    static_assert(std::is_nothrow_invocable_v<T_Callback, T_CallbackArgs...>);
 
     struct call_info {
-      CallInfoF	m_f;
-      CallInfoArgs	m_args;
+      CallInfoHeap* m_heap;
+      CallInfoF     m_f;
+      CallInfoArgs  m_args;
     };
 
-    auto call_info_size =
-      ROUND_UP(sizeof(call_info), ARCH_STACK_PTR_ALIGN);
+    void* vp = heap->try_allocate(sizeof(call_info), alignof(call_info));
 
-    auto stack_data = td.stack_data();
-    auto stack_size = td.stack_size();
+    if (vp != nullptr) {
 
-    __ASSERT_NO_MSG(call_info_size < stack_size);
+      auto cip = std::construct_at(reinterpret_cast<call_info*>(vp),
+                    heap,
+                    decay_copy(std::forward<T_Callback>(f)),
+                    decay_copy(std::forward_as_tuple(args...)));
 
-    stack_size = stack_size - call_info_size;
+      __ASSERT_NO_MSG(cip != nullptr);
 
-    auto call_info_ptr =
-        Z_THREAD_STACK_BUFFER(stack_data) + stack_size;
+      auto tid = k_thread_create(
+            td.native_handle(),
+            tstack.data(),
+            tstack.size(),
+            &callback_helper<call_info>,
+            reinterpret_cast<void*>(cip),
+            nullptr,
+            nullptr,
+            attr.native_prio(),
+            attr.native_options(),
+            attr.native_delay());
 
-    call_info* cip =
-      new(call_info_ptr) call_info {
-        decay_copy(std::forward<T_Callback>(f)),
-        decay_copy(std::forward_as_tuple(args...)) };
+      m_tid = thread_id(tid);
+    }
+  }
 
-    __ASSERT_NO_MSG(cip != nullptr);
 
-    auto tid = k_thread_create(td.native_thread_ptr(),
-          stack_data, stack_size,
-          &callback_helper<call_info>,
-          (void*)cip, nullptr, nullptr,
+  ///
+  /// @brief Creates a object which represents a new Zephyr thread.
+  ///
+  /// @param tcb The TCB to use
+  /// @param attr The creation attributes to use
+  /// @param f The thread entry point
+  /// @param args The arguments to pass to @a f
+  ///
+  template<typename T_Callback, typename T_CallbackArg,
+            std::enable_if_t<std::is_nothrow_invocable_v<T_Callback, T_CallbackArg>, bool> = true
+          >
+  constexpr thread(
+      thread_data& td,
+      thread_stack&& tstack,
+      const thread_attr& attr,
+      T_Callback f,
+      T_CallbackArg arg) noexcept
+  {
+    using func_t = void (*)(T_CallbackArg) noexcept;
+
+    static_assert(sizeof(T_CallbackArg) <= sizeof(void*));
+    static_assert(std::is_invocable_v<T_Callback, T_CallbackArg>);
+    static_assert(std::is_nothrow_invocable_v<T_Callback, T_CallbackArg>);
+    static_assert(std::is_invocable_v<func_t, T_CallbackArg>);
+    static_assert(std::is_nothrow_invocable_v<func_t, T_CallbackArg>);
+    static_assert(sizeof(func_t) <= sizeof(void*));
+    static_assert(alignof(T_CallbackArg) <= alignof(void*));
+    static_assert(std::is_trivial_v<T_CallbackArg>);
+
+    func_t fp = f;
+
+    void* arg_vp{};
+    std::construct_at(reinterpret_cast<T_CallbackArg*>(&arg_vp), arg);
+
+    auto tid = k_thread_create(
+          td.native_handle(),
+          tstack.data(),
+          tstack.size(),
+          &callback_helper<func_t, T_CallbackArg>,
+          reinterpret_cast<void*>(fp),
+          arg_vp,
+          nullptr,
           attr.native_prio(),
           attr.native_options(),
           attr.native_delay());
 
     m_tid = thread_id(tid);
   }
+
+
+  ///
+  /// @brief Creates a object which represents a new Zephyr thread.
+  ///
+  /// @param tcb The TCB to use
+  /// @param attr The creation attributes to use
+  /// @param f The thread entry point
+  /// @param args The arguments to pass to @a f
+  ///
+  template<typename T_Callback,
+            std::enable_if_t<std::is_nothrow_invocable_v<T_Callback>, bool> = true
+          >
+  constexpr thread(
+      thread_data& td,
+      thread_stack&& tstack,
+      const thread_attr& attr,
+      T_Callback f) noexcept
+  {
+    using func_t = void (*)() noexcept;
+
+    static_assert(std::is_invocable_v<T_Callback>);
+    static_assert(std::is_nothrow_invocable_v<T_Callback>);
+    static_assert(std::is_invocable_v<func_t>);
+    static_assert(std::is_nothrow_invocable_v<func_t>);
+    static_assert(sizeof(func_t) <= sizeof(void*));
+
+    func_t fp = f;
+
+    auto tid = k_thread_create(
+          td.native_handle(),
+          tstack.data(),
+          tstack.size(),
+          &callback_helper_void<func_t>,
+          reinterpret_cast<void*>(fp),
+          nullptr,
+          nullptr,
+          attr.native_prio(),
+          attr.native_options(),
+          attr.native_delay());
+
+    m_tid = thread_id(tid);
+  }
+
 
   ///
   /// @brief Move constructor

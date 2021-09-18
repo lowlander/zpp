@@ -8,6 +8,7 @@
 #define ZPP_INCLUDE_ZPP_THREAD_DATA_HPP
 
 #include <kernel.h>
+#include <sys/arch_interface.h>
 #include <sys/__assert.h>
 
 namespace zpp {
@@ -15,37 +16,19 @@ namespace zpp {
 ///
 /// @brief thread_data holds the stack and thread control block memory
 ///
-/// @param StackSize defines the stacksize in bytes
-///
-template <uint32_t T_StackSize>
 class thread_data {
 public:
   //
   // @brief Default constructor
   //
-  thread_data() noexcept
-  {
-  }
-private:
-  friend class thread;
+  constexpr thread_data() noexcept = default;
 
-  auto stack_data() noexcept
-  {
-    return m_thread_stack;
-  }
-
-  auto stack_size() const noexcept
-  {
-    return K_THREAD_STACK_SIZEOF(m_thread_stack);
-  }
-
-  auto native_thread_ptr() noexcept
+  constexpr auto native_handle() noexcept -> struct k_thread*
   {
     return &m_thread_data;
   }
 private:
   struct k_thread m_thread_data;
-  K_THREAD_STACK_MEMBER(m_thread_stack, T_StackSize);
 public:
   thread_data(const thread_data&) = delete;
   thread_data(thread_data&&) = delete;
