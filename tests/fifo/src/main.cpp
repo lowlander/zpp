@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#include <zephyr.h>
-#include <kernel.h>
 #include <ztest.h>
+
+#include <zephyr/kernel.h>
 
 #include <zpp/fifo.hpp>
 #include <zpp/thread.hpp>
@@ -14,11 +14,12 @@
 
 #include <array>
 
+ZTEST_SUITE(test_zpp_fifo, NULL, NULL, NULL, NULL, NULL);
+
 namespace {
 
 ZPP_THREAD_STACK_DEFINE(tstack, 1024);
 zpp::thread_data tcb;
-
 
 struct item {
   void* fifo_reserved{};
@@ -30,7 +31,9 @@ std::array<item, 4> g_item_array;
 
 zpp::fifo<item> g_fifo;
 
-void test_fifo()
+} // namespace
+
+ZTEST(test_zpp_fifo, test_fifo)
 {
   using namespace zpp;
   using namespace std::chrono;
@@ -87,14 +90,4 @@ void test_fifo()
     zassert_equal(res->more_data, 0x5678, nullptr);
     zassert_equal(res, &item, nullptr);
   }
-}
-
-} // namespace
-
-void test_main(void)
-{
-  ztest_test_suite(test_zpp_fifo,
-      ztest_unit_test(test_fifo)
-      );
-  ztest_run_test_suite(test_zpp_fifo);
 }

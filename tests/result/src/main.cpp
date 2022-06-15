@@ -4,14 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <kernel.h>
 #include <ztest.h>
 #include <sys/__assert.h>
+
+#include <zephyr/kernel.h>
 
 #include<string.h>
 
 #include <zpp.hpp>
+
+
+ZTEST_SUITE(test_zpp_result, NULL, NULL, NULL, NULL, NULL);
 
 namespace {
 
@@ -31,8 +34,9 @@ private:
   int m_data{42};
 };
 
+} // namespace
 
-void test_result()
+ZTEST(test_zpp_result, test_result)
 {
   zpp::result<int, zpp::error_code>   res_a;
   zpp::result<char, zpp::error_code>  res_b;
@@ -77,14 +81,4 @@ void test_result()
   zpp::result<ResultData, ErrorData>   res_h(zpp::error_result(ErrorData(13)));
   zassert_false(res_h, "res_h should be false\n");
 
-}
-
-} // namespace
-
-void test_main(void)
-{
-  ztest_test_suite(test_zpp_result,
-    ztest_unit_test(test_result)
-  );
-  ztest_run_test_suite(test_zpp_result);
 }

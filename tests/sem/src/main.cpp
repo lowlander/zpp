@@ -4,13 +4,15 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 
-#include <zephyr.h>
-#include <kernel.h>
 #include <ztest.h>
+
+#include <zephyr/kernel.h>
 
 #include <zpp/sem.hpp>
 #include <zpp/thread.hpp>
 #include <zpp/utils.hpp>
+
+ZTEST_SUITE(test_zpp_sem, NULL, NULL, NULL, NULL, NULL);
 
 namespace {
 
@@ -20,7 +22,9 @@ zpp::sem_ref simple_ref_sem(&g_sem);
 
 zpp::sem simple_sem(0, 10);
 
-void test_sem_cmp()
+} // namespace
+
+ZTEST(test_zpp_sem, test_sem_cmp)
 {
   bool res;
 
@@ -62,7 +66,7 @@ void test_sem_cmp()
 
 }
 
-void test_sem_take()
+ZTEST(test_zpp_sem, test_sem_try_take)
 {
   simple_sem.reset();
 
@@ -74,10 +78,7 @@ void test_sem_take()
                  "signal count missmatch Expected %d, got %d\n",
                  (i + 1), signal_count);
   }
-}
 
-void test_sem_try_take()
-{
   for (int i = 4; i >= 0; i--) {
     auto ret_value = simple_sem.try_take();
     zassert_true(ret_value == true,
@@ -91,7 +92,7 @@ void test_sem_try_take()
   }
 }
 
-void test_sem_try_take_fails()
+ZTEST(test_zpp_sem, test_sem_try_take_fails)
 {
   simple_sem.reset();
 
@@ -107,7 +108,7 @@ void test_sem_try_take_fails()
   }
 }
 
-void test_sem_try_take_for_fails()
+ZTEST(test_zpp_sem, test_sem_try_take_for_fails)
 {
   using namespace std::chrono;
 
@@ -120,7 +121,7 @@ void test_sem_try_take_for_fails()
   }
 }
 
-void test_sem_take_ref()
+ZTEST(test_zpp_sem, test_sem_try_take_ref)
 {
   simple_ref_sem.reset();
 
@@ -132,10 +133,7 @@ void test_sem_take_ref()
                  "signal count missmatch Expected %d, got %d\n",
                  (i + 1), signal_count);
   }
-}
 
-void test_sem_try_take_ref()
-{
   for (int i = 4; i >= 0; i--) {
     auto ret_value = simple_ref_sem.try_take();
     zassert_true(ret_value == true,
@@ -149,7 +147,7 @@ void test_sem_try_take_ref()
   }
 }
 
-void test_sem_try_take_fails_ref()
+ZTEST(test_zpp_sem, test_sem_try_take_fails_ref)
 {
   simple_ref_sem.reset();
 
@@ -165,7 +163,7 @@ void test_sem_try_take_fails_ref()
   }
 }
 
-void test_sem_try_take_for_fails_ref()
+ZTEST(test_zpp_sem, test_sem_try_take_for_fails_ref)
 {
   using namespace std::chrono;
 
@@ -176,22 +174,4 @@ void test_sem_try_take_for_fails_ref()
     zassert_true(ret_value == false,
                  "k_sem_take succeeded when its not possible");
   }
-}
-
-} // namespace
-
-void test_main(void)
-{
-  ztest_test_suite(test_zpp_sem,
-      ztest_unit_test(test_sem_cmp),
-      ztest_unit_test(test_sem_take),
-      ztest_unit_test(test_sem_try_take),
-      ztest_unit_test(test_sem_try_take_fails),
-      ztest_unit_test(test_sem_try_take_for_fails),
-      ztest_unit_test(test_sem_take_ref),
-      ztest_unit_test(test_sem_try_take_ref),
-      ztest_unit_test(test_sem_try_take_fails_ref),
-      ztest_unit_test(test_sem_try_take_for_fails_ref)
-      );
-  ztest_run_test_suite(test_zpp_sem);
 }

@@ -4,18 +4,23 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#include <zephyr.h>
-#include <kernel.h>
 #include <ztest.h>
+
+#include <zephyr/kernel.h>
 
 #include <zpp/heap.hpp>
 #include <zpp/fmt.hpp>
+
+
+ZTEST_SUITE(zpp_heap_tests, NULL, NULL, NULL, NULL, NULL);
 
 namespace {
 
 zpp::heap<1024> g_heap;
 
-void test_heap()
+} // namespace
+
+ZTEST(zpp_heap_tests, test_heap)
 {
   auto p = g_heap.allocate(1);
 
@@ -28,15 +33,4 @@ void test_heap()
   zassert_not_null(p, "");
 
   g_heap.deallocate(p);
-}
-
-} // namespace
-
-void test_main()
-{
-  ztest_test_suite(zpp_heap_tests,
-      ztest_unit_test(test_heap)
-    );
-
-  ztest_run_test_suite(zpp_heap_tests);
 }

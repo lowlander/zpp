@@ -12,6 +12,9 @@
 
 #include <chrono>
 
+
+ZTEST_SUITE(zpp_thread_tests, NULL, NULL, NULL, NULL, NULL);
+
 namespace {
 
 ZPP_THREAD_STACK_DEFINE(tstack, 1024);
@@ -21,7 +24,7 @@ zpp::heap<1024> theap;
 
 } // namespace
 
-static void test_thread_creation(void)
+ZTEST(zpp_thread_tests, test_thread_creation)
 {
   using namespace zpp;
   using namespace std::chrono;
@@ -59,7 +62,7 @@ static void test_thread_creation(void)
   print("Hello from main tid={}\n", this_thread::get_id());
 }
 
-static void test_thread_creation_void(void)
+ZTEST(zpp_thread_tests, test_thread_creation_void)
 {
   using namespace zpp;
   using namespace std::chrono;
@@ -84,7 +87,7 @@ static void test_thread_creation_void(void)
   print("Hello from main tid={}\n", this_thread::get_id());
 }
 
-static void test_thread_creation_pointer(void)
+ZTEST(zpp_thread_tests, test_thread_creation_pointer)
 {
   using namespace zpp;
   using namespace std::chrono;
@@ -140,7 +143,7 @@ static void test_thread_creation_pointer(void)
 }
 
 
-static void test_thread_creation_params(void)
+ZTEST(zpp_thread_tests, test_thread_creation_params)
 {
   using namespace zpp;
   using namespace std::chrono;
@@ -198,16 +201,4 @@ static void test_thread_creation_params(void)
   zassert_true(rc == true, "join failed");
 
   print("Hello from main tid={}\n", this_thread::get_id());
-}
-
-void test_main(void)
-{
-  ztest_test_suite(zpp_thread_tests,
-      ztest_unit_test(test_thread_creation),
-      ztest_unit_test(test_thread_creation_void),
-      ztest_unit_test(test_thread_creation_pointer),
-      ztest_unit_test(test_thread_creation_params)
-    );
-
-  ztest_run_test_suite(zpp_thread_tests);
 }

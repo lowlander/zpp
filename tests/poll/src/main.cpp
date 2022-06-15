@@ -5,13 +5,16 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#include <zephyr.h>
-#include <kernel.h>
 #include <ztest.h>
+
+#include <zephyr/kernel.h>
 
 #include <zpp/poll.hpp>
 #include <zpp/sem.hpp>
 #include <zpp/fifo.hpp>
+
+
+ZTEST_SUITE(zpp_poll_tests, NULL, NULL, NULL, NULL, NULL);
 
 namespace {
 
@@ -40,7 +43,9 @@ zpp::poll_event_set wait_events {
   nullptr
 };
 
-void test_poll_wait()
+} // namespace
+
+ZTEST(zpp_poll_tests, test_poll_wait)
 {
   using namespace std::chrono;
 
@@ -206,15 +211,4 @@ void test_poll_wait()
 
   wait_events[2].reset();
   wait_signal.reset();
-}
-
-} // namespace
-
-void test_main()
-{
-  ztest_test_suite(zpp_poll_tests,
-      ztest_unit_test(test_poll_wait)
-    );
-
-  ztest_run_test_suite(zpp_poll_tests);
 }

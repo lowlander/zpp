@@ -8,93 +8,70 @@
 
 #include <zpp/fmt.hpp>
 
-namespace {
+ZTEST_SUITE(zpp_print_tests, NULL, NULL, NULL, NULL, NULL);
 
-void test_print_uint8_t(void)
+ZTEST(zpp_print_tests, test_print_uint8_t)
 {
   uint8_t v{ 12 };
   zpp::print("uint8_t {} == 12\n", v);
 }
 
-void test_print_int8_t(void)
+ZTEST(zpp_print_tests, test_print_int8_t)
 {
   int8_t v{ -12 };
   zpp::print("int8_t {} == -12\n", v);
 }
 
-void test_print_uint16_t(void)
+ZTEST(zpp_print_tests, test_print_uint16_t)
 {
   uint16_t v{ 1234 };
   zpp::print("uint16_t {} == 1234\n", v);
 }
 
-void test_print_int16_t(void)
+ZTEST(zpp_print_tests, test_print_int16_t)
 {
   int16_t v{ -1234 };
   zpp::print("int16_t {} == -1234\n", v);
 }
 
-void test_print_uint32_t(void)
+ZTEST(zpp_print_tests, test_print_uint32_t)
 {
   uint32_t v{ 12345678 };
   zpp::print("uint32_t {} == 12345678\n", v);
 }
 
-void test_print_int32_t(void)
+ZTEST(zpp_print_tests, test_print_int32_t)
 {
   int32_t v{ -12345678 };
   zpp::print("int32_t {} == -12345678\n", v);
 }
 
-void test_print_uint64_t(void)
+ZTEST(zpp_print_tests, test_print_uint64_t)
 {
   uint64_t v{ 12345678901011 };
   zpp::print("uint64_t {} == 12345678901011\n", v);
 }
 
-void test_print_int64_t(void)
+ZTEST(zpp_print_tests, test_print_int64_t)
 {
   int64_t v{ -12345678901011 };
   zpp::print("int64_t {} == -12345678901011\n", v);
 }
 
-void test_print_char(void)
+ZTEST(zpp_print_tests, test_print_char)
 {
   char v{ 'c' };
   zpp::print("char {} == c\n", v);
 }
 
-void test_print_string(void)
+ZTEST(zpp_print_tests, test_print_string)
 {
   const char* v{ "string" };
   zpp::print("const char* {} == string\n", v);
 }
 
-void test_print_void_ptr(void)
+ZTEST(zpp_print_tests, test_print_void_ptr)
 {
   void* v{ (void*)0x12345678 };
   zpp::print("void* {} == 0x12345678\n", v);
-}
-
-} // namespace
-
-void test_main(void)
-{
-  TC_PRINT("C++ version %u\n", (uint32_t)__cplusplus);
-
-  ztest_test_suite(zpp_print_tests,
-      ztest_unit_test(test_print_uint8_t),
-      ztest_unit_test(test_print_int8_t),
-      ztest_unit_test(test_print_uint16_t),
-      ztest_unit_test(test_print_int16_t),
-      ztest_unit_test(test_print_uint32_t),
-      ztest_unit_test(test_print_int32_t),
-      ztest_unit_test(test_print_uint64_t),
-      ztest_unit_test(test_print_int64_t),
-      ztest_unit_test(test_print_char),
-      ztest_unit_test(test_print_string),
-      ztest_unit_test(test_print_void_ptr)
-    );
-
-  ztest_run_test_suite(zpp_print_tests);
 }

@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <kernel.h>
 #include <ztest.h>
 #include <sys/__assert.h>
 
 #include<string.h>
 
+#include <zephyr/kernel.h>
+
 #include <zpp.hpp>
+
+ZTEST_SUITE(test_zpp_condition_variable, NULL, NULL, NULL, NULL, NULL);
 
 namespace {
 
@@ -36,7 +38,9 @@ K_CONDVAR_DEFINE(g_condvar);
 
 zpp::condition_variable_ref cv_ref(&g_condvar);
 
-void test_condition_variable_cmp()
+} // namespace
+
+ZTEST(test_zpp_condition_variable, test_condition_variable_cmp)
 {
   bool res;
 
@@ -59,7 +63,7 @@ void test_condition_variable_cmp()
   zassert_true(res, "unable to compare condition_variable != k_condvar*\n");
 }
 
-void test_condition_variable()
+ZTEST(test_zpp_condition_variable, test_condition_variable)
 {
   using namespace zpp;
   using namespace std::chrono;
@@ -115,15 +119,4 @@ void test_condition_variable()
 
     rc = t.join();
     __ASSERT_NO_MSG(rc == true);
-}
-
-} // namespace
-
-void test_main(void)
-{
-  ztest_test_suite(test_zpp_condition_variable,
-    ztest_unit_test(test_condition_variable_cmp),
-    ztest_unit_test(test_condition_variable)
-  );
-  ztest_run_test_suite(test_zpp_condition_variable);
 }

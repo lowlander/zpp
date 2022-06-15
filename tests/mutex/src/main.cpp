@@ -4,14 +4,17 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 
-#include <zephyr.h>
-#include <kernel.h>
 #include <ztest.h>
+
+#include <zephyr/kernel.h>
 
 #include <zpp/mutex.hpp>
 #include <zpp/thread.hpp>
 #include <zpp/lock_guard.hpp>
 #include <zpp/utils.hpp>
+
+
+ZTEST_SUITE(test_zpp_mutex, NULL, NULL, NULL, NULL, NULL);
 
 namespace {
 
@@ -21,8 +24,9 @@ K_MUTEX_DEFINE(g_mutex);
 
 zpp::mutex_ref m_ref(&g_mutex);
 
+} // namespace
 
-void test_mutex_cmp()
+ZTEST(test_zpp_mutex, test_mutex_cmp)
 {
   bool res;
 
@@ -64,7 +68,7 @@ void test_mutex_cmp()
 
 }
 
-void test_mutex()
+ZTEST(test_zpp_mutex, test_mutex)
 {
   auto rc = m.lock();
 
@@ -75,7 +79,7 @@ void test_mutex()
   zassert_true(!!rc, "Failed to unlock mutex: %d\n", rc.error());
 }
 
-void test_mutex_ref()
+ZTEST(test_zpp_mutex, test_mutex_ref)
 {
   auto rc = m_ref.lock();
 
@@ -86,21 +90,8 @@ void test_mutex_ref()
   zassert_true(!!rc, "Failed to unlock mutex_ref: %d\n", rc.error());
 }
 
-void test_lock_guard()
+ZTEST(test_zpp_mutex, test_lock_guard)
 {
   zpp::lock_guard g(m);
   zpp::lock_guard g_ref(m_ref);
-}
-
-} // namespace
-
-void test_main(void)
-{
-  ztest_test_suite(test_zpp_mutex,
-      ztest_unit_test(test_mutex_cmp),
-      ztest_unit_test(test_mutex),
-      ztest_unit_test(test_mutex_ref),
-      ztest_unit_test(test_lock_guard)
-      );
-  ztest_run_test_suite(test_zpp_mutex);
 }

@@ -8,11 +8,13 @@
  * Simple test to check if all zpp headers are error free
  */
 
-#include <zephyr.h>
-#include <kernel.h>
 #include <ztest.h>
 
+#include <zephyr/kernel.h>
+
 #include <zpp.hpp>
+
+ZTEST_SUITE(zpp_compile_tests, NULL, NULL, NULL, NULL, NULL);
 
 //
 // check compile time power_of_two function
@@ -43,8 +45,3 @@ static_assert(zpp::is_multiple_of(0, 0) == false);
 static_assert(zpp::is_multiple_of(4, 4) == true);
 static_assert(zpp::is_multiple_of(6, 3) == true);
 static_assert(zpp::is_multiple_of(10, 3) == false);
-
-void test_main(void)
-{
-  /* This is only a compile time test */
-}
