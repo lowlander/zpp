@@ -12,7 +12,7 @@
 #include <chrono>
 
 #define NUM_THREADS 20
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024  + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 namespace {
 
