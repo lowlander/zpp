@@ -9,8 +9,8 @@
 
 #include <zpp/thread.hpp>
 
-#include <kernel.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 
 #include <chrono>
 #include <limits>

@@ -7,9 +7,9 @@
 #ifndef ZPP_INCLUDE_ZPP_CLOCK_HPP
 #define ZPP_INCLUDE_ZPP_CLOCK_HPP
 
-#include <kernel.h>
-#include <sys_clock.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/sys/__assert.h>
 
 #include <chrono>
 #include <limits>

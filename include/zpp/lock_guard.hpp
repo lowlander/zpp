@@ -7,8 +7,8 @@
 #ifndef ZPP_INCLUDE_ZPP_LOCK_GUARD_HPP
 #define ZPP_INCLUDE_ZPP_LOCK_GUARD_HPP
 
-#include <kernel.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 
 #include <chrono>
 

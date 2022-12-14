@@ -7,8 +7,8 @@
 #ifndef ZPP_INCLUDE_ZPP_ATOMIC_VAR_HPP
 #define ZPP_INCLUDE_ZPP_ATOMIC_VAR_HPP
 
-#include <sys/atomic.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/__assert.h>
 
 #include <cstddef>
 

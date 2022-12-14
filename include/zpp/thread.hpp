@@ -17,9 +17,9 @@
 #include <zpp/error_code.hpp>
 #include <zpp/heap.hpp>
 
-#include <kernel.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 #include <functional>
 #include <chrono>
