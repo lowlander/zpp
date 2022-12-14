@@ -7,8 +7,8 @@
 #ifndef ZPP_INCLUDE_ZPP_FMT_HPP
 #define ZPP_INCLUDE_ZPP_FMT_HPP
 
-#include <zephyr.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 
 #include <cstddef>
 #include <chrono>

@@ -7,9 +7,9 @@
 #ifndef ZPP_INCLUDE_ZPP_THREAD_DATA_HPP
 #define ZPP_INCLUDE_ZPP_THREAD_DATA_HPP
 
-#include <kernel.h>
-#include <sys/arch_interface.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/arch_interface.h>
+#include <zephyr/sys/__assert.h>
 
 namespace zpp {
 
