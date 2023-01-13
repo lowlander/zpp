@@ -8,7 +8,7 @@
  * Simple test to check if all zpp headers are error free
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/kernel.h>
 
