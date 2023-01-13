@@ -34,7 +34,7 @@ public:
   ///
   /// @param v the value to initialize the atomic_var with
   ///
-  constexpr explicit atomic_var(value_type v) noexcept
+  explicit atomic_var(value_type v) noexcept
   {
     store(v);
   }
