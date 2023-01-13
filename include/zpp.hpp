@@ -15,6 +15,7 @@
 #endif
 #endif
 
+#include <zpp/memory.hpp>
 #include <zpp/error_code.hpp>
 #include <zpp/result.hpp>
 #include <zpp/atomic_bitset.hpp>
