@@ -1,0 +1,4 @@
+<map id="zpp::sem_ref" name="zpp::sem_ref">
+<area shape="rect" id="node1" title="A counting semaphore class borrowing the native sem." alt="" coords="30,95,125,121"/>
+<area shape="rect" id="node2" href="$classzpp_1_1sem__base.html" title=" " alt="" coords="5,5,149,47"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="zpp::sync_timer" name="zpp::sync_timer">
+<area shape="rect" id="node1" title="timer class with no callbacks used for syncing only" alt="" coords="6,80,117,107"/>
+<area shape="rect" id="node2" href="$classzpp_1_1timer__base.html" title="base class for the timer class" alt="" coords="5,5,117,32"/>
+</map>

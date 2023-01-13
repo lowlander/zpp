@@ -1,0 +1,4 @@
+<map id="zpp::condition_variable_ref" name="zpp::condition_variable_ref">
+<area shape="rect" id="node1" title="A class using a reference to another native condition variable or zpp::condition_variable." alt="" coords="21,95,195,121"/>
+<area shape="rect" id="node2" href="$classzpp_1_1condition__variable__base.html" title=" " alt="" coords="5,5,211,47"/>
+</map>
